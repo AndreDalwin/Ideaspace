@@ -1,4 +1,4 @@
-import { PlanExitTool } from "./plan"
+import { PlanEnterTool, PlanExitTool } from "./plan"
 import { QuestionTool } from "./question"
 import { BashTool } from "./bash"
 import { EditTool } from "./edit"
@@ -119,7 +119,7 @@ export namespace ToolRegistry {
       ApplyPatchTool,
       ...(Flag.IDEASPACE_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),
       ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
-      ...(Flag.IDEASPACE_EXPERIMENTAL_PLAN_MODE && Flag.IDEASPACE_CLIENT === "cli" ? [PlanExitTool] : []),
+      ...(Flag.IDEASPACE_EXPERIMENTAL_PLAN_MODE ? [PlanEnterTool, PlanExitTool] : []),
       ...custom,
     ]
   }
