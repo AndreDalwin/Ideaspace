@@ -6,6 +6,7 @@
 - Prefer `.ideaspace` behavior and Ideaspace desktop/runtime branding where practical.
 - Do **not** broaden work into TUI/CLI cleanup or unrelated package renames unless explicitly asked.
 - For this phase, package-level build health is a sufficient verification bar when full repo cleanup is out of scope.
+- If the user wants a local macOS desktop build, follow `packages/desktop/BUILD_APP.md`. The verified Apple Silicon flow is `cd packages/desktop && TAURI_ENV_TARGET_TRIPLE=aarch64-apple-darwin npx -y bun@1.3.10 ./scripts/predev.ts && npx -y bun@1.3.10 run tauri build`.
 
 - To regenerate the JavaScript SDK, run `./packages/sdk/js/script/build.ts`.
 - ALWAYS USE PARALLEL TOOLS WHEN APPLICABLE.
