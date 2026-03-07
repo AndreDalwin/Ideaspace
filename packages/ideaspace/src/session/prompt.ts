@@ -827,7 +827,18 @@ export namespace SessionPrompt {
       })
     }
 
+    const mcpAllowlist = (() => {
+      if (input.agent.mcps !== undefined) return input.agent.mcps
+      if (input.agent.mode === "subagent") return []
+      return undefined
+    })()
+
     for (const [key, item] of Object.entries(await MCP.tools())) {
+      if (mcpAllowlist !== undefined) {
+        const clientName = key.split("_")[0]
+        if (!mcpAllowlist.includes(clientName)) continue
+      }
+
       const execute = item.execute
       if (!execute) continue
 
