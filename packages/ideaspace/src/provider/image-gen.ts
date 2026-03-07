@@ -229,7 +229,7 @@ export namespace ImageGen {
     }
 
     const token = await getToken()
-    const publisher = modelID.startsWith("imagen") ? "google" : "google"
+    const publisher = "google"
     const url = `https://${endpoint}/v1/projects/${project}/locations/${location}/publishers/${publisher}/models/${modelID}:predict`
 
     const parameters: { sampleCount: number; aspectRatio?: string } = {
