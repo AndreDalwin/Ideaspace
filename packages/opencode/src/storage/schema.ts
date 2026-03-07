@@ -3,3 +3,7 @@ export { SessionTable, MessageTable, PartTable, TodoTable, PermissionTable } fro
 export { SessionShareTable } from "../share/share.sql"
 export { ProjectTable } from "../project/project.sql"
 export { WorkspaceTable } from "../control-plane/workspace.sql"
+export { NotebookTable, PageTable } from "../notebook/notebook.sql"
+export { ContextItemTable, SessionContextTable, TaskContextTable } from "../context/context.sql"
+export { TaskTable } from "../task/task.sql"
+export { AgentRunTable } from "../agent-run/agent-run.sql"

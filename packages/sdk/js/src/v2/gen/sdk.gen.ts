@@ -4,6 +4,9 @@ import { client } from "./client.gen.js"
 import { buildClientParams, type Client, type Options as Options2, type TDataShape } from "./client/index.js"
 import type {
   AgentPartInput,
+  AgentRunGetErrors,
+  AgentRunGetResponses,
+  AgentRunListResponses,
   AppAgentsResponses,
   AppLogErrors,
   AppLogResponses,
@@ -19,6 +22,15 @@ import type {
   ConfigProvidersResponses,
   ConfigUpdateErrors,
   ConfigUpdateResponses,
+  ContextCreateErrors,
+  ContextCreateResponses,
+  ContextGetErrors,
+  ContextGetResponses,
+  ContextListResponses,
+  ContextRemoveErrors,
+  ContextRemoveResponses,
+  ContextUpdateErrors,
+  ContextUpdateResponses,
   EventSubscribeResponses,
   EventTuiCommandExecute,
   EventTuiPromptAppend,
@@ -63,7 +75,25 @@ import type {
   McpLocalConfig,
   McpRemoteConfig,
   McpStatusResponses,
+  NotebookCreateErrors,
+  NotebookCreateResponses,
+  NotebookGetErrors,
+  NotebookGetResponses,
+  NotebookListResponses,
+  NotebookRemoveErrors,
+  NotebookRemoveResponses,
+  NotebookUpdateErrors,
+  NotebookUpdateResponses,
   OutputFormat,
+  PageCreateErrors,
+  PageCreateResponses,
+  PageGetErrors,
+  PageGetResponses,
+  PageListResponses,
+  PageRemoveErrors,
+  PageRemoveResponses,
+  PageUpdateErrors,
+  PageUpdateResponses,
   Part as Part2,
   PartDeleteErrors,
   PartDeleteResponses,
@@ -110,6 +140,13 @@ import type {
   SessionChildrenResponses,
   SessionCommandErrors,
   SessionCommandResponses,
+  SessionContextAttachErrors,
+  SessionContextAttachResponses,
+  SessionContextDetachErrors,
+  SessionContextDetachResponses,
+  SessionContextListResponses,
+  SessionContextToggleErrors,
+  SessionContextToggleResponses,
   SessionCreateErrors,
   SessionCreateResponses,
   SessionDeleteErrors,
@@ -150,6 +187,17 @@ import type {
   SessionUpdateErrors,
   SessionUpdateResponses,
   SubtaskPartInput,
+  TaskCreateErrors,
+  TaskCreateResponses,
+  TaskGetErrors,
+  TaskGetResponses,
+  TaskListResponses,
+  TaskMoveErrors,
+  TaskMoveResponses,
+  TaskRemoveErrors,
+  TaskRemoveResponses,
+  TaskUpdateErrors,
+  TaskUpdateResponses,
   TextPartInput,
   ToolIdsErrors,
   ToolIdsResponses,
@@ -1244,6 +1292,168 @@ export class Worktree extends HeyApiClient {
   }
 }
 
+export class Context extends HeyApiClient {
+  /**
+   * List session context
+   *
+   * List all context items attached to a session.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters: {
+      sessionID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "sessionID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<SessionContextListResponses, unknown, ThrowOnError>({
+      url: "/session-context/{sessionID}/context",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Attach context to session
+   *
+   * Attach a context item to a session.
+   */
+  public attach<ThrowOnError extends boolean = false>(
+    parameters: {
+      sessionID: string
+      directory?: string
+      workspace?: string
+      contextID?: string
+      position?: number
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "sessionID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "contextID" },
+            { in: "body", key: "position" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<
+      SessionContextAttachResponses,
+      SessionContextAttachErrors,
+      ThrowOnError
+    >({
+      url: "/session-context/{sessionID}/context",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Detach context from session
+   *
+   * Detach a context item from a session.
+   */
+  public detach<ThrowOnError extends boolean = false>(
+    parameters: {
+      sessionID: string
+      contextID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "sessionID" },
+            { in: "path", key: "contextID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).delete<
+      SessionContextDetachResponses,
+      SessionContextDetachErrors,
+      ThrowOnError
+    >({
+      url: "/session-context/{sessionID}/context/{contextID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Toggle session context
+   *
+   * Enable or disable a context item in a session.
+   */
+  public toggle<ThrowOnError extends boolean = false>(
+    parameters: {
+      sessionID: string
+      contextID: string
+      directory?: string
+      workspace?: string
+      enabled?: boolean
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "sessionID" },
+            { in: "path", key: "contextID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "enabled" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).patch<
+      SessionContextToggleResponses,
+      SessionContextToggleErrors,
+      ThrowOnError
+    >({
+      url: "/session-context/{sessionID}/context/{contextID}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
 export class Session2 extends HeyApiClient {
   /**
    * List sessions
@@ -2182,6 +2392,11 @@ export class Session2 extends HeyApiClient {
       ...params,
     })
   }
+
+  private _context?: Context
+  get context(): Context {
+    return (this._context ??= new Context({ client: this.client }))
+  }
 }
 
 export class Part extends HeyApiClient {
@@ -2634,6 +2849,857 @@ export class Provider extends HeyApiClient {
   private _oauth?: Oauth
   get oauth(): Oauth {
     return (this._oauth ??= new Oauth({ client: this.client }))
+  }
+}
+
+export class Notebook extends HeyApiClient {
+  /**
+   * List notebooks
+   *
+   * List all notebooks in the current project.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<NotebookListResponses, unknown, ThrowOnError>({
+      url: "/notebook",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Create notebook
+   *
+   * Create a new notebook in the current project.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      name?: string
+      icon?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "name" },
+            { in: "body", key: "icon" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<NotebookCreateResponses, NotebookCreateErrors, ThrowOnError>({
+      url: "/notebook",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Delete notebook
+   *
+   * Delete a notebook and all its pages.
+   */
+  public remove<ThrowOnError extends boolean = false>(
+    parameters: {
+      notebookID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "notebookID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).delete<NotebookRemoveResponses, NotebookRemoveErrors, ThrowOnError>({
+      url: "/notebook/{notebookID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Get notebook
+   *
+   * Get a specific notebook.
+   */
+  public get<ThrowOnError extends boolean = false>(
+    parameters: {
+      notebookID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "notebookID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<NotebookGetResponses, NotebookGetErrors, ThrowOnError>({
+      url: "/notebook/{notebookID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Update notebook
+   *
+   * Update a notebook's name or icon.
+   */
+  public update<ThrowOnError extends boolean = false>(
+    parameters: {
+      notebookID: string
+      directory?: string
+      workspace?: string
+      name?: string
+      icon?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "notebookID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "name" },
+            { in: "body", key: "icon" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).patch<NotebookUpdateResponses, NotebookUpdateErrors, ThrowOnError>({
+      url: "/notebook/{notebookID}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
+export class Page extends HeyApiClient {
+  /**
+   * List pages
+   *
+   * List all pages in a notebook.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters: {
+      notebookID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "notebookID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<PageListResponses, unknown, ThrowOnError>({
+      url: "/notebook/{notebookID}/page",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Create page
+   *
+   * Create a new page in a notebook.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters: {
+      notebookID: string
+      directory?: string
+      workspace?: string
+      title?: string
+      body?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "notebookID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "title" },
+            { in: "body", key: "body" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<PageCreateResponses, PageCreateErrors, ThrowOnError>({
+      url: "/notebook/{notebookID}/page",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Delete page
+   *
+   * Delete a page and its associated context item.
+   */
+  public remove<ThrowOnError extends boolean = false>(
+    parameters: {
+      notebookID: string
+      pageID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "notebookID" },
+            { in: "path", key: "pageID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).delete<PageRemoveResponses, PageRemoveErrors, ThrowOnError>({
+      url: "/notebook/{notebookID}/page/{pageID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Get page
+   *
+   * Get a specific page.
+   */
+  public get<ThrowOnError extends boolean = false>(
+    parameters: {
+      notebookID: string
+      pageID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "notebookID" },
+            { in: "path", key: "pageID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<PageGetResponses, PageGetErrors, ThrowOnError>({
+      url: "/notebook/{notebookID}/page/{pageID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Update page
+   *
+   * Update a page's title or body.
+   */
+  public update<ThrowOnError extends boolean = false>(
+    parameters: {
+      notebookID: string
+      pageID: string
+      directory?: string
+      workspace?: string
+      title?: string
+      body?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "notebookID" },
+            { in: "path", key: "pageID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "title" },
+            { in: "body", key: "body" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).patch<PageUpdateResponses, PageUpdateErrors, ThrowOnError>({
+      url: "/notebook/{notebookID}/page/{pageID}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
+export class Task extends HeyApiClient {
+  /**
+   * List tasks
+   *
+   * List all tasks in the current project.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<TaskListResponses, unknown, ThrowOnError>({
+      url: "/task",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Create task
+   *
+   * Create a new task in the current project.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      title?: string
+      body?: string
+      status?: string
+      priority?: string
+      assigneeKind?: string
+      assigneeID?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "title" },
+            { in: "body", key: "body" },
+            { in: "body", key: "status" },
+            { in: "body", key: "priority" },
+            { in: "body", key: "assigneeKind" },
+            { in: "body", key: "assigneeID" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<TaskCreateResponses, TaskCreateErrors, ThrowOnError>({
+      url: "/task",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Delete task
+   *
+   * Delete a task.
+   */
+  public remove<ThrowOnError extends boolean = false>(
+    parameters: {
+      taskID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "taskID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).delete<TaskRemoveResponses, TaskRemoveErrors, ThrowOnError>({
+      url: "/task/{taskID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Get task
+   *
+   * Get a specific task.
+   */
+  public get<ThrowOnError extends boolean = false>(
+    parameters: {
+      taskID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "taskID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<TaskGetResponses, TaskGetErrors, ThrowOnError>({
+      url: "/task/{taskID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Update task
+   *
+   * Update a task's properties.
+   */
+  public update<ThrowOnError extends boolean = false>(
+    parameters: {
+      taskID: string
+      directory?: string
+      workspace?: string
+      title?: string
+      body?: string
+      status?: string
+      priority?: string
+      assigneeKind?: string
+      assigneeID?: string
+      dueAt?: number
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "taskID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "title" },
+            { in: "body", key: "body" },
+            { in: "body", key: "status" },
+            { in: "body", key: "priority" },
+            { in: "body", key: "assigneeKind" },
+            { in: "body", key: "assigneeID" },
+            { in: "body", key: "dueAt" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).patch<TaskUpdateResponses, TaskUpdateErrors, ThrowOnError>({
+      url: "/task/{taskID}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Move task
+   *
+   * Move a task to a different status column and position.
+   */
+  public move<ThrowOnError extends boolean = false>(
+    parameters: {
+      taskID: string
+      directory?: string
+      workspace?: string
+      status?: string
+      position?: number
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "taskID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "status" },
+            { in: "body", key: "position" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<TaskMoveResponses, TaskMoveErrors, ThrowOnError>({
+      url: "/task/{taskID}/move",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
+export class Context2 extends HeyApiClient {
+  /**
+   * List context items
+   *
+   * List all context items in the current project.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<ContextListResponses, unknown, ThrowOnError>({
+      url: "/context",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Create context item
+   *
+   * Create a new context item in the current project.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      kind?: string
+      title?: string
+      body?: string
+      refID?: string
+      pinned?: boolean
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "kind" },
+            { in: "body", key: "title" },
+            { in: "body", key: "body" },
+            { in: "body", key: "refID" },
+            { in: "body", key: "pinned" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<ContextCreateResponses, ContextCreateErrors, ThrowOnError>({
+      url: "/context",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Delete context item
+   *
+   * Delete a context item.
+   */
+  public remove<ThrowOnError extends boolean = false>(
+    parameters: {
+      contextID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "contextID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).delete<ContextRemoveResponses, ContextRemoveErrors, ThrowOnError>({
+      url: "/context/{contextID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Get context item
+   *
+   * Get a specific context item.
+   */
+  public get<ThrowOnError extends boolean = false>(
+    parameters: {
+      contextID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "contextID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<ContextGetResponses, ContextGetErrors, ThrowOnError>({
+      url: "/context/{contextID}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Update context item
+   *
+   * Update a context item's properties.
+   */
+  public update<ThrowOnError extends boolean = false>(
+    parameters: {
+      contextID: string
+      directory?: string
+      workspace?: string
+      title?: string
+      body?: string
+      pinned?: boolean
+      security?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "contextID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "title" },
+            { in: "body", key: "body" },
+            { in: "body", key: "pinned" },
+            { in: "body", key: "security" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).patch<ContextUpdateResponses, ContextUpdateErrors, ThrowOnError>({
+      url: "/context/{contextID}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
+export class AgentRun extends HeyApiClient {
+  /**
+   * List agent runs
+   *
+   * List agent runs, optionally filtered by session or task.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      sessionID?: string
+      taskID?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "query", key: "sessionID" },
+            { in: "query", key: "taskID" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<AgentRunListResponses, unknown, ThrowOnError>({
+      url: "/agent-run",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Get agent run
+   *
+   * Get a specific agent run.
+   */
+  public get<ThrowOnError extends boolean = false>(
+    parameters: {
+      runID: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "runID" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<AgentRunGetResponses, AgentRunGetErrors, ThrowOnError>({
+      url: "/agent-run/{runID}",
+      ...options,
+      ...params,
+    })
   }
 }
 
@@ -3961,6 +5027,31 @@ export class OpencodeClient extends HeyApiClient {
   private _provider?: Provider
   get provider(): Provider {
     return (this._provider ??= new Provider({ client: this.client }))
+  }
+
+  private _notebook?: Notebook
+  get notebook(): Notebook {
+    return (this._notebook ??= new Notebook({ client: this.client }))
+  }
+
+  private _page?: Page
+  get page(): Page {
+    return (this._page ??= new Page({ client: this.client }))
+  }
+
+  private _task?: Task
+  get task(): Task {
+    return (this._task ??= new Task({ client: this.client }))
+  }
+
+  private _context?: Context2
+  get context(): Context2 {
+    return (this._context ??= new Context2({ client: this.client }))
+  }
+
+  private _agentRun?: AgentRun
+  get agentRun(): AgentRun {
+    return (this._agentRun ??= new AgentRun({ client: this.client }))
   }
 
   private _find?: Find

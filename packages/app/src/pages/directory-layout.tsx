@@ -4,6 +4,9 @@ import { useNavigate, useParams } from "@solidjs/router"
 import { SDKProvider } from "@/context/sdk"
 import { SyncProvider, useSync } from "@/context/sync"
 import { LocalProvider } from "@/context/local"
+import { NotebookProvider } from "@/context/notebook"
+import { TaskBoardProvider } from "@/context/task-board"
+import { ContextBankProvider } from "@/context/context-bank"
 
 import { DataProvider } from "@opencode-ai/ui/context"
 import { decode64 } from "@/utils/base64"
@@ -22,7 +25,13 @@ function DirectoryDataProvider(props: ParentProps<{ directory: string }>) {
       onNavigateToSession={(sessionID: string) => navigate(`/${params.dir}/session/${sessionID}`)}
       onSessionHref={(sessionID: string) => `/${params.dir}/session/${sessionID}`}
     >
-      <LocalProvider>{props.children}</LocalProvider>
+      <LocalProvider>
+        <NotebookProvider>
+          <TaskBoardProvider>
+            <ContextBankProvider>{props.children}</ContextBankProvider>
+          </TaskBoardProvider>
+        </NotebookProvider>
+      </LocalProvider>
     </DataProvider>
   )
 }

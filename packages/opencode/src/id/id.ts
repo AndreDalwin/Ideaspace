@@ -12,6 +12,11 @@ export namespace Identifier {
     pty: "pty",
     tool: "tool",
     workspace: "wrk",
+    notebook: "nbk",
+    page: "pge",
+    context_item: "ctx",
+    task: "tsk",
+    agent_run: "arn",
   } as const
 
   export function schema(prefix: keyof typeof prefixes) {

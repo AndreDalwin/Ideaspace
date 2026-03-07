@@ -957,6 +957,220 @@ export type EventWorktreeFailed = {
   }
 }
 
+export type Notebook = {
+  id: string
+  projectID: string
+  name: string
+  icon?: string
+  position: number
+  time: {
+    created: number
+    updated: number
+  }
+}
+
+export type EventNotebookCreated = {
+  type: "notebook.created"
+  properties: {
+    info: Notebook
+  }
+}
+
+export type EventNotebookUpdated = {
+  type: "notebook.updated"
+  properties: {
+    info: Notebook
+  }
+}
+
+export type EventNotebookDeleted = {
+  type: "notebook.deleted"
+  properties: {
+    info: Notebook
+  }
+}
+
+export type Page = {
+  id: string
+  notebookID: string
+  title: string
+  body: string
+  position: number
+  time: {
+    created: number
+    updated: number
+  }
+}
+
+export type EventPageCreated = {
+  type: "page.created"
+  properties: {
+    info: Page
+  }
+}
+
+export type EventPageUpdated = {
+  type: "page.updated"
+  properties: {
+    info: Page
+  }
+}
+
+export type EventPageDeleted = {
+  type: "page.deleted"
+  properties: {
+    info: Page
+  }
+}
+
+export type Task = {
+  id: string
+  projectID: string
+  boardID?: string
+  title: string
+  body?: string
+  status: string
+  priority: string
+  assigneeKind?: string
+  assigneeID?: string
+  dueAt?: number
+  position: number
+  time: {
+    created: number
+    updated: number
+  }
+}
+
+export type EventTaskCreated = {
+  type: "task.created"
+  properties: {
+    info: Task
+  }
+}
+
+export type EventTaskUpdated = {
+  type: "task.updated"
+  properties: {
+    info: Task
+  }
+}
+
+export type EventTaskDeleted = {
+  type: "task.deleted"
+  properties: {
+    info: Task
+  }
+}
+
+export type ContextItem = {
+  id: string
+  projectID: string
+  kind: string
+  refID?: string
+  title: string
+  body?: string
+  security: string
+  pinned: boolean
+  tokens?: number
+  time: {
+    created: number
+    updated: number
+  }
+}
+
+export type EventContextItemCreated = {
+  type: "context_item.created"
+  properties: {
+    info: ContextItem
+  }
+}
+
+export type EventContextItemUpdated = {
+  type: "context_item.updated"
+  properties: {
+    info: ContextItem
+  }
+}
+
+export type EventContextItemDeleted = {
+  type: "context_item.deleted"
+  properties: {
+    info: ContextItem
+  }
+}
+
+export type SessionContext = {
+  sessionID: string
+  contextID: string
+  enabled: boolean
+  position: number
+  context?: ContextItem
+  time: {
+    created: number
+    updated: number
+  }
+}
+
+export type EventSessionContextCreated = {
+  type: "session_context.created"
+  properties: {
+    info: SessionContext
+  }
+}
+
+export type EventSessionContextUpdated = {
+  type: "session_context.updated"
+  properties: {
+    info: SessionContext
+  }
+}
+
+export type EventSessionContextDeleted = {
+  type: "session_context.deleted"
+  properties: {
+    info: SessionContext
+  }
+}
+
+export type AgentRun = {
+  id: string
+  taskID?: string
+  sessionID?: string
+  agentKind: string
+  status: string
+  summary?: string
+  tokensIn?: number
+  tokensOut?: number
+  cost?: string
+  startedAt?: number
+  endedAt?: number
+  time: {
+    created: number
+    updated: number
+  }
+}
+
+export type EventAgentRunCreated = {
+  type: "agent_run.created"
+  properties: {
+    info: AgentRun
+  }
+}
+
+export type EventAgentRunUpdated = {
+  type: "agent_run.updated"
+  properties: {
+    info: AgentRun
+  }
+}
+
+export type EventAgentRunDeleted = {
+  type: "agent_run.deleted"
+  properties: {
+    info: AgentRun
+  }
+}
+
 export type Event =
   | EventInstallationUpdated
   | EventInstallationUpdateAvailable
@@ -1003,6 +1217,24 @@ export type Event =
   | EventPtyDeleted
   | EventWorktreeReady
   | EventWorktreeFailed
+  | EventNotebookCreated
+  | EventNotebookUpdated
+  | EventNotebookDeleted
+  | EventPageCreated
+  | EventPageUpdated
+  | EventPageDeleted
+  | EventTaskCreated
+  | EventTaskUpdated
+  | EventTaskDeleted
+  | EventContextItemCreated
+  | EventContextItemUpdated
+  | EventContextItemDeleted
+  | EventSessionContextCreated
+  | EventSessionContextUpdated
+  | EventSessionContextDeleted
+  | EventAgentRunCreated
+  | EventAgentRunUpdated
+  | EventAgentRunDeleted
 
 export type GlobalEvent = {
   directory: string
@@ -4098,6 +4330,825 @@ export type ProviderOauthCallbackResponses = {
 }
 
 export type ProviderOauthCallbackResponse = ProviderOauthCallbackResponses[keyof ProviderOauthCallbackResponses]
+
+export type NotebookListData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook"
+}
+
+export type NotebookListResponses = {
+  /**
+   * List of notebooks
+   */
+  200: Array<Notebook>
+}
+
+export type NotebookListResponse = NotebookListResponses[keyof NotebookListResponses]
+
+export type NotebookCreateData = {
+  body?: {
+    name: string
+    icon?: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook"
+}
+
+export type NotebookCreateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type NotebookCreateError = NotebookCreateErrors[keyof NotebookCreateErrors]
+
+export type NotebookCreateResponses = {
+  /**
+   * Created notebook
+   */
+  200: Notebook
+}
+
+export type NotebookCreateResponse = NotebookCreateResponses[keyof NotebookCreateResponses]
+
+export type NotebookRemoveData = {
+  body?: never
+  path: {
+    notebookID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook/{notebookID}"
+}
+
+export type NotebookRemoveErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type NotebookRemoveError = NotebookRemoveErrors[keyof NotebookRemoveErrors]
+
+export type NotebookRemoveResponses = {
+  /**
+   * Notebook deleted
+   */
+  200: boolean
+}
+
+export type NotebookRemoveResponse = NotebookRemoveResponses[keyof NotebookRemoveResponses]
+
+export type NotebookGetData = {
+  body?: never
+  path: {
+    notebookID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook/{notebookID}"
+}
+
+export type NotebookGetErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type NotebookGetError = NotebookGetErrors[keyof NotebookGetErrors]
+
+export type NotebookGetResponses = {
+  /**
+   * Notebook info
+   */
+  200: Notebook
+}
+
+export type NotebookGetResponse = NotebookGetResponses[keyof NotebookGetResponses]
+
+export type NotebookUpdateData = {
+  body?: {
+    name?: string
+    icon?: string
+  }
+  path: {
+    notebookID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook/{notebookID}"
+}
+
+export type NotebookUpdateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type NotebookUpdateError = NotebookUpdateErrors[keyof NotebookUpdateErrors]
+
+export type NotebookUpdateResponses = {
+  /**
+   * Updated notebook
+   */
+  200: Notebook
+}
+
+export type NotebookUpdateResponse = NotebookUpdateResponses[keyof NotebookUpdateResponses]
+
+export type PageListData = {
+  body?: never
+  path: {
+    notebookID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook/{notebookID}/page"
+}
+
+export type PageListResponses = {
+  /**
+   * List of pages
+   */
+  200: Array<Page>
+}
+
+export type PageListResponse = PageListResponses[keyof PageListResponses]
+
+export type PageCreateData = {
+  body?: {
+    title: string
+    body?: string
+  }
+  path: {
+    notebookID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook/{notebookID}/page"
+}
+
+export type PageCreateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type PageCreateError = PageCreateErrors[keyof PageCreateErrors]
+
+export type PageCreateResponses = {
+  /**
+   * Created page
+   */
+  200: Page
+}
+
+export type PageCreateResponse = PageCreateResponses[keyof PageCreateResponses]
+
+export type PageRemoveData = {
+  body?: never
+  path: {
+    notebookID: string
+    pageID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook/{notebookID}/page/{pageID}"
+}
+
+export type PageRemoveErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type PageRemoveError = PageRemoveErrors[keyof PageRemoveErrors]
+
+export type PageRemoveResponses = {
+  /**
+   * Page deleted
+   */
+  200: boolean
+}
+
+export type PageRemoveResponse = PageRemoveResponses[keyof PageRemoveResponses]
+
+export type PageGetData = {
+  body?: never
+  path: {
+    notebookID: string
+    pageID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook/{notebookID}/page/{pageID}"
+}
+
+export type PageGetErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type PageGetError = PageGetErrors[keyof PageGetErrors]
+
+export type PageGetResponses = {
+  /**
+   * Page info
+   */
+  200: Page
+}
+
+export type PageGetResponse = PageGetResponses[keyof PageGetResponses]
+
+export type PageUpdateData = {
+  body?: {
+    title?: string
+    body?: string
+  }
+  path: {
+    notebookID: string
+    pageID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/notebook/{notebookID}/page/{pageID}"
+}
+
+export type PageUpdateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type PageUpdateError = PageUpdateErrors[keyof PageUpdateErrors]
+
+export type PageUpdateResponses = {
+  /**
+   * Updated page
+   */
+  200: Page
+}
+
+export type PageUpdateResponse = PageUpdateResponses[keyof PageUpdateResponses]
+
+export type TaskListData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/task"
+}
+
+export type TaskListResponses = {
+  /**
+   * List of tasks
+   */
+  200: Array<Task>
+}
+
+export type TaskListResponse = TaskListResponses[keyof TaskListResponses]
+
+export type TaskCreateData = {
+  body?: {
+    title: string
+    body?: string
+    status?: string
+    priority?: string
+    assigneeKind?: string
+    assigneeID?: string
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/task"
+}
+
+export type TaskCreateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type TaskCreateError = TaskCreateErrors[keyof TaskCreateErrors]
+
+export type TaskCreateResponses = {
+  /**
+   * Created task
+   */
+  200: Task
+}
+
+export type TaskCreateResponse = TaskCreateResponses[keyof TaskCreateResponses]
+
+export type TaskRemoveData = {
+  body?: never
+  path: {
+    taskID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/task/{taskID}"
+}
+
+export type TaskRemoveErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type TaskRemoveError = TaskRemoveErrors[keyof TaskRemoveErrors]
+
+export type TaskRemoveResponses = {
+  /**
+   * Task deleted
+   */
+  200: boolean
+}
+
+export type TaskRemoveResponse = TaskRemoveResponses[keyof TaskRemoveResponses]
+
+export type TaskGetData = {
+  body?: never
+  path: {
+    taskID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/task/{taskID}"
+}
+
+export type TaskGetErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type TaskGetError = TaskGetErrors[keyof TaskGetErrors]
+
+export type TaskGetResponses = {
+  /**
+   * Task info
+   */
+  200: Task
+}
+
+export type TaskGetResponse = TaskGetResponses[keyof TaskGetResponses]
+
+export type TaskUpdateData = {
+  body?: {
+    title?: string
+    body?: string
+    status?: string
+    priority?: string
+    assigneeKind?: string
+    assigneeID?: string
+    dueAt?: number
+  }
+  path: {
+    taskID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/task/{taskID}"
+}
+
+export type TaskUpdateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type TaskUpdateError = TaskUpdateErrors[keyof TaskUpdateErrors]
+
+export type TaskUpdateResponses = {
+  /**
+   * Updated task
+   */
+  200: Task
+}
+
+export type TaskUpdateResponse = TaskUpdateResponses[keyof TaskUpdateResponses]
+
+export type TaskMoveData = {
+  body?: {
+    status: string
+    position: number
+  }
+  path: {
+    taskID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/task/{taskID}/move"
+}
+
+export type TaskMoveErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type TaskMoveError = TaskMoveErrors[keyof TaskMoveErrors]
+
+export type TaskMoveResponses = {
+  /**
+   * Moved task
+   */
+  200: Task
+}
+
+export type TaskMoveResponse = TaskMoveResponses[keyof TaskMoveResponses]
+
+export type ContextListData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/context"
+}
+
+export type ContextListResponses = {
+  /**
+   * List of context items
+   */
+  200: Array<ContextItem>
+}
+
+export type ContextListResponse = ContextListResponses[keyof ContextListResponses]
+
+export type ContextCreateData = {
+  body?: {
+    kind: string
+    title: string
+    body?: string
+    refID?: string
+    pinned?: boolean
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/context"
+}
+
+export type ContextCreateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type ContextCreateError = ContextCreateErrors[keyof ContextCreateErrors]
+
+export type ContextCreateResponses = {
+  /**
+   * Created context item
+   */
+  200: ContextItem
+}
+
+export type ContextCreateResponse = ContextCreateResponses[keyof ContextCreateResponses]
+
+export type ContextRemoveData = {
+  body?: never
+  path: {
+    contextID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/context/{contextID}"
+}
+
+export type ContextRemoveErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type ContextRemoveError = ContextRemoveErrors[keyof ContextRemoveErrors]
+
+export type ContextRemoveResponses = {
+  /**
+   * Context item deleted
+   */
+  200: boolean
+}
+
+export type ContextRemoveResponse = ContextRemoveResponses[keyof ContextRemoveResponses]
+
+export type ContextGetData = {
+  body?: never
+  path: {
+    contextID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/context/{contextID}"
+}
+
+export type ContextGetErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type ContextGetError = ContextGetErrors[keyof ContextGetErrors]
+
+export type ContextGetResponses = {
+  /**
+   * Context item info
+   */
+  200: ContextItem
+}
+
+export type ContextGetResponse = ContextGetResponses[keyof ContextGetResponses]
+
+export type ContextUpdateData = {
+  body?: {
+    title?: string
+    body?: string
+    pinned?: boolean
+    security?: string
+  }
+  path: {
+    contextID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/context/{contextID}"
+}
+
+export type ContextUpdateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type ContextUpdateError = ContextUpdateErrors[keyof ContextUpdateErrors]
+
+export type ContextUpdateResponses = {
+  /**
+   * Updated context item
+   */
+  200: ContextItem
+}
+
+export type ContextUpdateResponse = ContextUpdateResponses[keyof ContextUpdateResponses]
+
+export type SessionContextListData = {
+  body?: never
+  path: {
+    sessionID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/session-context/{sessionID}/context"
+}
+
+export type SessionContextListResponses = {
+  /**
+   * List of session context items
+   */
+  200: Array<SessionContext>
+}
+
+export type SessionContextListResponse = SessionContextListResponses[keyof SessionContextListResponses]
+
+export type SessionContextAttachData = {
+  body?: {
+    contextID: string
+    position?: number
+  }
+  path: {
+    sessionID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/session-context/{sessionID}/context"
+}
+
+export type SessionContextAttachErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type SessionContextAttachError = SessionContextAttachErrors[keyof SessionContextAttachErrors]
+
+export type SessionContextAttachResponses = {
+  /**
+   * Attached context
+   */
+  200: SessionContext
+}
+
+export type SessionContextAttachResponse = SessionContextAttachResponses[keyof SessionContextAttachResponses]
+
+export type SessionContextDetachData = {
+  body?: never
+  path: {
+    sessionID: string
+    contextID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/session-context/{sessionID}/context/{contextID}"
+}
+
+export type SessionContextDetachErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type SessionContextDetachError = SessionContextDetachErrors[keyof SessionContextDetachErrors]
+
+export type SessionContextDetachResponses = {
+  /**
+   * Context detached
+   */
+  200: boolean
+}
+
+export type SessionContextDetachResponse = SessionContextDetachResponses[keyof SessionContextDetachResponses]
+
+export type SessionContextToggleData = {
+  body?: {
+    enabled: boolean
+  }
+  path: {
+    sessionID: string
+    contextID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/session-context/{sessionID}/context/{contextID}"
+}
+
+export type SessionContextToggleErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type SessionContextToggleError = SessionContextToggleErrors[keyof SessionContextToggleErrors]
+
+export type SessionContextToggleResponses = {
+  /**
+   * Updated session context
+   */
+  200: SessionContext
+}
+
+export type SessionContextToggleResponse = SessionContextToggleResponses[keyof SessionContextToggleResponses]
+
+export type AgentRunListData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+    sessionID?: string
+    taskID?: string
+  }
+  url: "/agent-run"
+}
+
+export type AgentRunListResponses = {
+  /**
+   * List of agent runs
+   */
+  200: Array<AgentRun>
+}
+
+export type AgentRunListResponse = AgentRunListResponses[keyof AgentRunListResponses]
+
+export type AgentRunGetData = {
+  body?: never
+  path: {
+    runID: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/agent-run/{runID}"
+}
+
+export type AgentRunGetErrors = {
+  /**
+   * Not found
+   */
+  404: NotFoundError
+}
+
+export type AgentRunGetError = AgentRunGetErrors[keyof AgentRunGetErrors]
+
+export type AgentRunGetResponses = {
+  /**
+   * Agent run info
+   */
+  200: AgentRun
+}
+
+export type AgentRunGetResponse = AgentRunGetResponses[keyof AgentRunGetResponses]
 
 export type FindTextData = {
   body?: never

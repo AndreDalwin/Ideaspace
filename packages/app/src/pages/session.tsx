@@ -33,6 +33,7 @@ import { usePrompt } from "@/context/prompt"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
 import { createSessionComposerState, SessionComposerRegion } from "@/pages/session/composer"
+import { ContextTray } from "@/pages/session/context-tray"
 import { createOpenReviewFile } from "@/pages/session/helpers"
 import { MessageTimeline } from "@/pages/session/message-timeline"
 import { type DiffStyle, SessionReviewTab, type SessionReviewTabProps } from "@/pages/session/review-tab"
@@ -1336,6 +1337,8 @@ export default function Page() {
               </Match>
             </Switch>
           </div>
+
+          <ContextTray sessionID={params.id} />
 
           <SessionComposerRegion
             state={composer}
