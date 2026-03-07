@@ -1,0 +1,3 @@
+- Removed the old tabs from the unified workspace so the Canvas model feels clean and focused.
+- Retained ProjectTabs only when the legacy Agents/Context views are active to avoid visual duplication.
+- Added smooth panel resizes, loading states, hover/focus polish, and celebratory toasts to finish the Canvas workspace experience.
