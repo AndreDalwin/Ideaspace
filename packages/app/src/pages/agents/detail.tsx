@@ -99,6 +99,11 @@ function sameMap(a: Record<string, PermissionLevel>, b: Record<string, Permissio
   return keys.every((key) => a[key] === b[key])
 }
 
+function sameSet(a: Set<string>, b: Set<string>) {
+  if (a.size !== b.size) return false
+  return [...a].every((item) => b.has(item))
+}
+
 function PermissionRow(props: {
   label: string
   desc: string
@@ -180,6 +185,7 @@ export const AgentDetail: Component = () => {
       other: "deny" as PermissionLevel,
     } satisfies PermissionState,
   })
+
   const [form, setForm] = createStore<FormState>({
     name: "",
     description: "",
@@ -249,10 +255,17 @@ export const AgentDetail: Component = () => {
 
   const subagents = () => agents.subagents.filter((item) => item.name !== selected())
 
+  const [selectedAgent, setSelectedAgent] = createSignal<Agent | undefined>(undefined)
+
   const agent = () => {
     const name = selected()
-    if (!name) return undefined
-    return agents.get(name)
+    if (!name) return selectedAgent()
+    const fromList = agents.get(name)
+    if (fromList) {
+      setSelectedAgent(fromList)
+      return fromList
+    }
+    return selectedAgent()
   }
 
   onMount(async () => {
@@ -544,9 +557,23 @@ export const AgentDetail: Component = () => {
         agent: next,
       })
       await agents.reload()
-      setSelected(form.name)
+
       const refreshed = agents.get(form.name)
-      if (refreshed) loadAgentData(refreshed)
+      if (refreshed) setSelectedAgent(refreshed)
+
+      setBase({
+        name: form.name,
+        description: form.description,
+        mode: form.mode,
+        prompt: prompt(),
+        model: store.model,
+        variant: store.variant,
+        steps: store.steps,
+        hidden: store.hidden,
+        taskRule: store.taskRule,
+        taskItem: { ...store.taskItem },
+        perms: { ...store.perms },
+      })
 
       setForm("isEditing", false)
       setStore("isEditing", false)
@@ -566,11 +593,28 @@ export const AgentDetail: Component = () => {
     }
   }
 
-  const isDirty = () =>
-    form.isEditing ||
-    store.isEditing ||
-    selectedMcps().size !== initialMcps().size ||
-    ![...selectedMcps()].every((m) => initialMcps().has(m))
+  const isDirty = () => {
+    if (form.name !== base.name) return true
+    if (form.description !== base.description) return true
+    if (form.mode !== base.mode) return true
+    if (prompt() !== base.prompt) return true
+    if (store.model !== base.model) return true
+    if (store.variant !== base.variant) return true
+    if (store.steps !== base.steps) return true
+    if (store.hidden !== base.hidden) return true
+    if (store.taskRule !== base.taskRule) return true
+    if (!sameMap(store.taskItem, base.taskItem)) return true
+    if (store.perms.fileRead !== base.perms.fileRead) return true
+    if (store.perms.fileEdit !== base.perms.fileEdit) return true
+    if (store.perms.filePaths !== base.perms.filePaths) return true
+    if (store.perms.imageGenerate !== base.perms.imageGenerate) return true
+    if (store.perms.webfetch !== base.perms.webfetch) return true
+    if (store.perms.websearch !== base.perms.websearch) return true
+    if (store.perms.bash !== base.perms.bash) return true
+    if (store.perms.bashPaths !== base.perms.bashPaths) return true
+    if (store.perms.other !== base.perms.other) return true
+    return !sameSet(selectedMcps(), initialMcps())
+  }
 
   const confirmNavigate = () => {
     if (!isDirty()) return true
