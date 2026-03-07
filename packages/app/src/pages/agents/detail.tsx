@@ -4,12 +4,14 @@ import { AgentList } from "./list"
 import { useAgents } from "@/context/agents"
 import { useSDK } from "@/context/sdk"
 import { useSync } from "@/context/sync"
+import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { Button } from "@opencode-ai/ui/button"
 import { TextField } from "@opencode-ai/ui/text-field"
 import { Select } from "@opencode-ai/ui/select"
 import { RadioGroup } from "@opencode-ai/ui/radio-group"
 import { Checkbox } from "@opencode-ai/ui/checkbox"
 import { Icon } from "@opencode-ai/ui/icon"
+import { Dialog } from "@opencode-ai/ui/dialog"
 import { showToast } from "@opencode-ai/ui/toast"
 import { useLanguage } from "@/context/language"
 import type { Agent, AgentConfig } from "@opencode-ai/sdk/v2/client"
@@ -98,7 +100,10 @@ export const AgentDetail: Component = () => {
   const sdk = useSDK()
   const sync = useSync()
   const lang = useLanguage()
+  const dialog = useDialog()
   const [selected, setSelected] = createSignal<string | undefined>(undefined)
+  const [deleting, setDeleting] = createSignal(false)
+  const [resetting, setResetting] = createSignal(false)
   const [expanded, setExpanded] = createSignal(true)
   const [prompt, setPrompt] = createSignal("")
   const [mcps, setMcps] = createSignal<MCP[]>([])
@@ -302,6 +307,52 @@ export const AgentDetail: Component = () => {
     selectedMcps().size !== initialMcps().size ||
     ![...selectedMcps()].every((m) => initialMcps().has(m))
 
+  const handleDelete = () => {
+    const a = agent()
+    if (!a || a.native) return
+
+    dialog.show(() => (
+      <Dialog
+        title="Delete Agent"
+        description={`Are you sure you want to delete "${a.name}"? This action cannot be undone.`}
+        action={
+          <div class="flex items-center gap-2">
+            <Button size="small" variant="ghost" onClick={() => dialog.close()}>
+              Cancel
+            </Button>
+            <Button
+              size="small"
+              variant="primary"
+              class="bg-danger-base hover:bg-danger-strong"
+              disabled={deleting()}
+              onClick={async () => {
+                setDeleting(true)
+                try {
+                  await agents.remove(a.name)
+                  setSelected(undefined)
+                  dialog.close()
+                  showToast({
+                    title: lang.t("common.success"),
+                    description: "Agent deleted successfully",
+                  })
+                } catch (err) {
+                  showToast({
+                    title: lang.t("common.requestFailed"),
+                    description: err instanceof Error ? err.message : String(err),
+                  })
+                } finally {
+                  setDeleting(false)
+                }
+              }}
+            >
+              {deleting() ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        }
+      />
+    ))
+  }
+
   return (
     <div class="flex h-full w-full flex-col lg:flex-row">
       {/* Left pane - Agent List */}
@@ -356,7 +407,7 @@ export const AgentDetail: Component = () => {
                     </Button>
                   </Show>
                   <Show when={!a().native}>
-                    <Button size="small" variant="ghost" class="text-danger-base">
+                    <Button size="small" variant="ghost" class="text-danger-base" onClick={handleDelete}>
                       <Icon name="trash" size="small" />
                       Delete
                     </Button>
