@@ -28,9 +28,18 @@ const log = Log.create({ service: "db" })
 
 export namespace Database {
   export const Path = (() => {
+    const safeChannel = (channel: string) => {
+      const cleaned = channel
+        .replace(/[/\\]+/g, "-")
+        .replace(/[^A-Za-z0-9._-]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-+|-+$/g, "")
+      return cleaned || "custom"
+    }
+
     const name =
       Installation.CHANNEL !== "latest" && !Flag.OPENCODE_DISABLE_CHANNEL_DB
-        ? `opencode-${Installation.CHANNEL}.db`
+        ? `opencode-${safeChannel(Installation.CHANNEL)}.db`
         : "opencode.db"
     return path.join(Global.Path.data, name)
   })()
@@ -64,17 +73,17 @@ export namespace Database {
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
 
-    const sql = dirs
-      .map((name) => {
-        const file = path.join(dir, name, "migration.sql")
-        if (!existsSync(file)) return
-        return {
+    const sql = dirs.flatMap((name) => {
+      const file = path.join(dir, name, "migration.sql")
+      if (!existsSync(file)) return []
+      return [
+        {
           sql: readFileSync(file, "utf-8"),
           timestamp: time(name),
           name,
-        }
-      })
-      .filter(Boolean) as Journal
+        },
+      ]
+    })
 
     return sql.sort((a, b) => a.timestamp - b.timestamp)
   }
