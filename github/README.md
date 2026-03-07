@@ -121,7 +121,7 @@ To test locally:
      GITHUB_RUN_ID=dummy \
      MOCK_TOKEN=github_pat_1234567890 \
      MOCK_EVENT='{"eventName":"issue_comment",...}' \
-     bun /path/to/opencode/github/index.ts
+     bun /path/to/ideaspace/github/index.ts
    ```
 
    - `MODEL`: The model used by opencode. Same as the `MODEL` defined in the GitHub workflow.
@@ -129,7 +129,7 @@ To test locally:
    - `GITHUB_RUN_ID`: Dummy value to emulate GitHub action environment.
    - `MOCK_TOKEN`: A GitHub personal access token. This token is used to verify you have `admin` or `write` access to the test repo. Generate a token [here](https://github.com/settings/personal-access-tokens).
    - `MOCK_EVENT`: Mock GitHub event payload (see templates below).
-   - `/path/to/opencode`: Path to your cloned opencode repo. `bun /path/to/opencode/github/index.ts` runs your local version of `opencode`.
+   - `/path/to/ideaspace`: Path to your cloned Ideaspace repo. `bun /path/to/ideaspace/github/index.ts` runs your local version of Ideaspace.
 
 ### Issue comment event
 

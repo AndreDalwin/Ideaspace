@@ -1,7 +1,7 @@
 export const deepLinkEvent = "ideaspace:deep-link"
 
 const parseUrl = (input: string) => {
-  if (!input.startsWith("ideaspace://") && !input.startsWith("opencode://")) return
+  if (!input.startsWith("ideaspace://")) return
   if (typeof URL.canParse === "function" && !URL.canParse(input)) return
   try {
     return new URL(input)
@@ -37,14 +37,15 @@ export const collectNewSessionDeepLinks = (urls: string[]) =>
   urls.map(parseNewSessionDeepLink).filter((link): link is { directory: string; prompt?: string } => !!link)
 
 type IdeaspaceWindow = Window & {
-  __OPENCODE__?: {
+  __IDEASPACE__?: {
     deepLinks?: string[]
   }
 }
 
 export const drainPendingDeepLinks = (target: IdeaspaceWindow) => {
-  const pending = target.__OPENCODE__?.deepLinks ?? []
+  const boot = target.__IDEASPACE__
+  const pending = boot?.deepLinks ?? []
   if (pending.length === 0) return []
-  if (target.__OPENCODE__) target.__OPENCODE__.deepLinks = []
+  if (target.__IDEASPACE__) target.__IDEASPACE__.deepLinks = []
   return pending
 }

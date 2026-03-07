@@ -8,10 +8,8 @@ import { createSimpleContext } from "../context/helper"
 export type ColorScheme = "light" | "dark" | "system"
 
 const STORAGE_KEYS = {
-  THEME_ID: "opencode-theme-id",
-  COLOR_SCHEME: "opencode-color-scheme",
-  THEME_CSS_LIGHT: "opencode-theme-css-light",
-  THEME_CSS_DARK: "opencode-theme-css-dark",
+  THEME_ID: "ideaspace-theme-id",
+  COLOR_SCHEME: "ideaspace-color-scheme",
 } as const
 
 const THEME_STYLE_ID = "oc-theme"
@@ -29,6 +27,10 @@ function getSystemMode(): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 }
 
+function getThemeCssKey(themeId: string, mode: "light" | "dark") {
+  return `ideaspace-theme-css-${themeId}-${mode}`
+}
+
 function applyThemeCss(theme: DesktopTheme, themeId: string, mode: "light" | "dark") {
   const isDark = mode === "dark"
   const variant = isDark ? theme.dark : theme.light
@@ -37,7 +39,7 @@ function applyThemeCss(theme: DesktopTheme, themeId: string, mode: "light" | "da
 
   if (themeId !== "oc-1") {
     try {
-      localStorage.setItem(isDark ? STORAGE_KEYS.THEME_CSS_DARK : STORAGE_KEYS.THEME_CSS_LIGHT, css)
+      localStorage.setItem(getThemeCssKey(themeId, mode), css)
     } catch {}
   }
 
@@ -61,7 +63,7 @@ function cacheThemeVariants(theme: DesktopTheme, themeId: string) {
     const tokens = resolveThemeVariant(variant, isDark)
     const css = themeToCss(tokens)
     try {
-      localStorage.setItem(isDark ? STORAGE_KEYS.THEME_CSS_DARK : STORAGE_KEYS.THEME_CSS_LIGHT, css)
+      localStorage.setItem(getThemeCssKey(themeId, mode), css)
     } catch {}
   }
 }

@@ -15,8 +15,8 @@ type PersistTarget = {
 }
 
 const LEGACY_STORAGE = "default.dat"
-const GLOBAL_STORAGE = "opencode.global.dat"
-const LOCAL_PREFIX = "opencode."
+const GLOBAL_STORAGE = "ideaspace.global.dat"
+const LOCAL_PREFIX = "ideaspace."
 const fallback = new Map<string, boolean>()
 
 const CACHE_MAX_ENTRIES = 500
@@ -206,7 +206,7 @@ function normalize(defaults: unknown, raw: string, migrate?: (value: unknown) =>
 function workspaceStorage(dir: string) {
   const head = dir.slice(0, 12) || "workspace"
   const sum = checksum(dir) ?? "0"
-  return `opencode.workspace.${head}.${sum}.dat`
+  return `ideaspace.workspace.${head}.${sum}.dat`
 }
 
 function localStorageWithPrefix(prefix: string): SyncStorage {
@@ -352,7 +352,9 @@ export function persisted<T>(
   })()
 
   const legacyStorage = (() => {
-    if (!isDesktop) return localStorageDirect()
+    if (!isDesktop) {
+      return localStorageDirect()
+    }
     if (!config.storage) return platform.storage?.()
     return platform.storage?.(LEGACY_STORAGE)
   })()
@@ -430,7 +432,7 @@ export function persisted<T>(
             continue
           }
           await current.setItem(key, next)
-          await legacyStore.removeItem(legacyKey)
+          await legacyStore.removeItem(legacyKey).catch(() => undefined)
           return next
         }
 

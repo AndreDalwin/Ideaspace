@@ -56,17 +56,17 @@ pub async fn set_default_server_url(app: AppHandle, url: Option<String>) -> Resu
 #[tauri::command]
 #[specta::specta]
 pub fn get_wsl_config(_app: AppHandle) -> Result<WslConfig, String> {
-    // let store = app
-    //     .store(SETTINGS_STORE)
-    //     .map_err(|e| format!("Failed to open settings store: {}", e))?;
+    let store = _app
+        .store(SETTINGS_STORE)
+        .map_err(|e| format!("Failed to open settings store: {}", e))?;
 
-    // let enabled = store
-    //     .get(WSL_ENABLED_KEY)
-    //     .as_ref()
-    //     .and_then(|v| v.as_bool())
-    //     .unwrap_or(false);
+    let enabled = store
+        .get(WSL_ENABLED_KEY)
+        .as_ref()
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
 
-    Ok(WslConfig { enabled: false })
+    Ok(WslConfig { enabled })
 }
 
 #[tauri::command]
@@ -169,7 +169,7 @@ pub async fn check_health(url: &str, password: Option<&str>) -> bool {
     let mut req = client.get(health_url);
 
     if let Some(password) = password {
-        req = req.basic_auth("opencode", Some(password));
+        req = req.basic_auth("ideaspace", Some(password));
     }
 
     req.send()

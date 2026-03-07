@@ -6,12 +6,12 @@ import { type as ostype } from "@tauri-apps/plugin-os"
 import { initI18n, t } from "./i18n"
 import { commands } from "./bindings"
 
-export const UPDATER_ENABLED = window.__OPENCODE__?.updaterEnabled ?? false
+export const UPDATER_ENABLED = window.__IDEASPACE__?.updaterEnabled ?? false
 
 export async function runUpdater({ alertOnFail }: { alertOnFail: boolean }) {
   await initI18n()
 
-  let update
+  let update: Awaited<ReturnType<typeof check>>
   try {
     update = await check()
   } catch {

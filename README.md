@@ -45,7 +45,7 @@ The remaining implementation path is the desktop stack:
 
 - `packages/app`
 - `packages/desktop`
-- `packages/opencode`
+- `packages/ideaspace`
 - shared support packages used by that stack (`packages/sdk/js`, `packages/ui`, `packages/util`, `packages/plugin`, `packages/script`)
 
 ## Repo status
@@ -67,7 +67,7 @@ Run these separately for local UI work:
 
 ```bash
 # Backend
-cd packages/opencode
+cd packages/ideaspace
 bun run --conditions=browser ./src/index.ts serve --port 4096
 
 # App
@@ -94,7 +94,7 @@ bun run verify:desktop
 
 # Or run the pieces directly
 cd packages/app && bun run typecheck && bun run test:unit && bun run build
-cd packages/opencode && bun run build
+cd packages/ideaspace && bun run build
 cd packages/desktop && bun run build
 ```
 

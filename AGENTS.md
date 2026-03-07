@@ -2,11 +2,11 @@
 
 - This repo is being reshaped into **Ideaspace**, a desktop-first AI workspace for a hackathon.
 - Current product direction: project tabs for `Workspace`, `Tasks`, `Agents`, `Context`, and `Session` while keeping the existing AI/session flow important.
-- Current implementation focus is limited to `packages/app`, `packages/desktop`, and desktop-supporting runtime/config work in `packages/opencode`.
+- Current implementation focus is limited to `packages/app`, `packages/desktop`, and desktop-supporting runtime/config work in `packages/ideaspace`.
 - Prefer `.ideaspace` behavior and Ideaspace desktop/runtime branding where practical.
 - Non-desktop delivery surfaces have been trimmed out for the hackathon: no Electron desktop, no Slack app, no enterprise app, no console app, and no editor extensions.
 - Keep `packages/web` and existing TUI/CLI code passive for now; they are out of active feature scope and should not gate desktop verification.
-- For this phase, desktop-stack health is the verification bar: `packages/app`, `packages/desktop`, and `packages/opencode` plus their shared dependencies.
+- For this phase, desktop-stack health is the verification bar: `packages/app`, `packages/desktop`, and `packages/ideaspace` plus their shared dependencies.
 - If the user wants a local macOS desktop build, follow `packages/desktop/BUILD_APP.md`. The verified Apple Silicon flow is `cd packages/desktop && TAURI_ENV_TARGET_TRIPLE=aarch64-apple-darwin npx -y bun@1.3.10 ./scripts/predev.ts && npx -y bun@1.3.10 run tauri build`.
 
 - To regenerate the JavaScript SDK, run `./packages/sdk/js/script/build.ts`.
@@ -132,4 +132,4 @@ const table = sqliteTable("session", {
 
 - Avoid mocks as much as possible
 - Test actual implementation, do not duplicate logic into tests
-- Tests cannot run from repo root (guard: `do-not-run-tests-from-root`); run from package dirs like `packages/opencode`.
+- Tests cannot run from repo root (guard: `do-not-run-tests-from-root`); run from package dirs like `packages/ideaspace`.

@@ -8,7 +8,7 @@ Run the backend and app separately:
 
 ```bash
 # Backend
-cd ../opencode
+cd ../ideaspace
 bun run --conditions=browser ./src/index.ts serve --port 4096
 
 # App

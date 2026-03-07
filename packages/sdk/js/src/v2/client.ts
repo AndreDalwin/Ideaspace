@@ -19,11 +19,11 @@ export function createOpencodeClient(config?: Config & { directory?: string }) {
   }
 
   if (config?.directory) {
-    const isNonASCII = /[^\x00-\x7F]/.test(config.directory)
+    const isNonASCII = Array.from(config.directory).some((x) => x.charCodeAt(0) > 127)
     const encodedDirectory = isNonASCII ? encodeURIComponent(config.directory) : config.directory
     config.headers = {
       ...config.headers,
-      "x-opencode-directory": encodedDirectory,
+      "x-ideaspace-directory": encodedDirectory,
     }
   }
 

@@ -323,7 +323,7 @@ pub fn run() {
 
     #[cfg(all(target_os = "macos", not(debug_assertions)))]
     let _ = std::process::Command::new("killall")
-        .arg("opencode-cli")
+        .arg("ideaspace-cli")
         .output();
 
     let mut builder = tauri::Builder::default()
@@ -512,7 +512,7 @@ async fn initialize(app: AppHandle) {
                                 let _ = child.kill();
 
                                 return Err(format!(
-                                    "Failed to spawn OpenCode Server ({err}). Logs:\n{}",
+                                    "Failed to spawn Ideaspace Server ({err}). Logs:\n{}",
                                     get_logs()
                                 ));
                             }
@@ -657,7 +657,7 @@ async fn setup_server_connection(app: AppHandle) -> ServerConnection {
 
     ServerConnection::CLI {
         url: local_url,
-        username: Some("opencode".to_string()),
+        username: Some("ideaspace".to_string()),
         password: Some(password),
         child,
         health_check,
@@ -665,9 +665,9 @@ async fn setup_server_connection(app: AppHandle) -> ServerConnection {
 }
 
 fn get_sidecar_port() -> u32 {
-    option_env!("OPENCODE_PORT")
+    option_env!("IDEASPACE_PORT")
         .map(|s| s.to_string())
-        .or_else(|| std::env::var("OPENCODE_PORT").ok())
+        .or_else(|| std::env::var("IDEASPACE_PORT").ok())
         .and_then(|port_str| port_str.parse().ok())
         .unwrap_or_else(|| {
             TcpListener::bind("127.0.0.1:0")
@@ -689,7 +689,7 @@ fn sqlite_file_exists() -> bool {
             .filter_map(|entry| entry.ok())
             .any(|entry| {
                 if let Some(name) = entry.file_name().to_str() {
-                    name.starts_with("opencode") && name.ends_with(".db")
+                    name.starts_with("ideaspace") && name.ends_with(".db")
                 } else {
                     false
                 }

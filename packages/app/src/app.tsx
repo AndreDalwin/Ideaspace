@@ -73,12 +73,14 @@ function UiI18nBridge(props: ParentProps) {
 }
 
 declare global {
+  type IdeaspaceBoot = {
+    updaterEnabled?: boolean
+    deepLinks?: string[]
+    wsl?: boolean
+  }
+
   interface Window {
-    __OPENCODE__?: {
-      updaterEnabled?: boolean
-      deepLinks?: string[]
-      wsl?: boolean
-    }
+    __IDEASPACE__?: IdeaspaceBoot
   }
 }
 
