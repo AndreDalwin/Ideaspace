@@ -1,4 +1,4 @@
-import { Component, createSignal, For, onMount, Show } from "solid-js"
+import { Component, createSignal, For, onMount, onCleanup, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { AgentList } from "./list"
 import { useAgents } from "@/context/agents"
@@ -148,6 +148,15 @@ export const AgentDetail: Component = () => {
       }))
       setMcps(mcpList)
     }
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isDirty()) {
+        e.preventDefault()
+        e.returnValue = ""
+      }
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    onCleanup(() => window.removeEventListener("beforeunload", handleBeforeUnload))
   })
 
   const toggleMcp = (name: string) => {
@@ -240,6 +249,8 @@ export const AgentDetail: Component = () => {
   }
 
   const handleSelect = (a: Agent) => {
+    if (a.name === selected()) return
+    if (!confirmNavigate()) return
     setSelected(a.name)
     loadAgentData(a)
   }
@@ -307,6 +318,11 @@ export const AgentDetail: Component = () => {
     store.isEditing ||
     selectedMcps().size !== initialMcps().size ||
     ![...selectedMcps()].every((m) => initialMcps().has(m))
+
+  const confirmNavigate = () => {
+    if (!isDirty()) return true
+    return window.confirm("You have unsaved changes. Are you sure you want to leave?")
+  }
 
   const handleCreate = () => {
     dialog.show(() => (
@@ -477,6 +493,9 @@ export const AgentDetail: Component = () => {
                   <Button size="small" variant="primary" disabled={!isDirty() || saving()} onClick={handleSave}>
                     <Icon name="check" size="small" />
                     Save
+                    <Show when={isDirty()}>
+                      <span class="ml-1.5 h-1.5 w-1.5 rounded-full bg-current" />
+                    </Show>
                   </Button>
                 </div>
               </div>
