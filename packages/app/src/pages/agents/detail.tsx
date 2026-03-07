@@ -464,7 +464,7 @@ export const AgentDetail: Component = () => {
                 </div>
                 <div class="flex items-center gap-2">
                   <Show when={a().native}>
-                    <Button size="small" variant="ghost">
+                    <Button size="small" variant="ghost" onClick={handleReset}>
                       Reset
                     </Button>
                   </Show>
