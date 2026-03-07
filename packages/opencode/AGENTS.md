@@ -5,8 +5,8 @@
 - `packages/opencode` currently supports the Ideaspace desktop starter rather than a full repo-wide rename.
 - Prefer `.ideaspace` and Ideaspace runtime/config behavior where it supports the desktop app.
 - Keep legacy `.opencode` compatibility where the current starter still needs to read existing data.
-- Avoid unrelated TUI/CLI cleanup in this package unless the user explicitly asks for it.
-- For the current hackathon phase, backend/package build success is a sufficient verification bar when wider cleanup is out of scope.
+- Keep existing TUI/CLI code passive unless the user explicitly asks for direct cleanup there.
+- For the current hackathon phase, this package is verified as part of the desktop stack; backend build success is sufficient unless the touched change is specifically TUI/CLI-facing.
 
 ## Database
 

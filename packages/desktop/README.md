@@ -1,6 +1,6 @@
-# OpenCode Desktop
+# Ideaspace Desktop
 
-Native OpenCode desktop app, built with Tauri v2.
+Native Ideaspace desktop app, built with Tauri v2.
 
 ## Prerequisites
 
@@ -15,11 +15,13 @@ bun install
 bun run --cwd packages/desktop tauri dev
 ```
 
+If you are building distributable artifacts, use the verified app build guide instead of calling `tauri build` directly:
+
+- `./BUILD_APP.md`
+
 ## Build
 
-```bash
-bun run --cwd packages/desktop tauri build
-```
+Follow `./BUILD_APP.md` for the `.app` and `.dmg` flow, because the sidecar prep step is required.
 
 ## Troubleshooting
 

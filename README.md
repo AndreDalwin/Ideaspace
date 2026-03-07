@@ -23,11 +23,30 @@ The current starter is meant to unblock fast parallel work during the hackathon:
 
 ## Current scope
 
-- Focus on the desktop app first
+- Build on the desktop stack only for this hackathon
 - Keep the AI/session experience intact
 - Use Ideaspace branding where it matters for desktop/runtime flows
 - Prefer `.ideaspace` over `.opencode`, while keeping some legacy compatibility where practical
-- Defer broad TUI/CLI cleanup and deeper repo-wide rename work until later
+- Keep `packages/web` and existing TUI/CLI code around only as passive surfaces; they are not active implementation targets or verification gates
+
+## Repo trim for the hackathon
+
+We removed non-desktop delivery surfaces that were slowing the repo down or adding irrelevant failures:
+
+- removed `packages/desktop-electron`
+- removed `packages/console`
+- removed `packages/enterprise`
+- removed `packages/slack`
+- removed `packages/storybook`
+- removed VS Code / Zed extension surfaces
+- removed release/deploy workflows tied to those old surfaces
+
+The remaining implementation path is the desktop stack:
+
+- `packages/app`
+- `packages/desktop`
+- `packages/opencode`
+- shared support packages used by that stack (`packages/sdk/js`, `packages/ui`, `packages/util`, `packages/plugin`, `packages/script`)
 
 ## Repo status
 
@@ -67,18 +86,16 @@ bun tauri dev
 
 ## Verification
 
-For the current hackathon phase, package-level build health is the main bar:
+For the current hackathon phase, desktop-stack health is the main bar:
 
 ```bash
-# App
-cd packages/app
-bun run typecheck
-bun run test:unit
-bun run build
+# From repo root
+bun run verify:desktop
 
-# Backend/package build
-cd packages/opencode
-bun run build
+# Or run the pieces directly
+cd packages/app && bun run typecheck && bun run test:unit && bun run build
+cd packages/opencode && bun run build
+cd packages/desktop && bun run build
 ```
 
 If your local Bun is older than `1.3.10`, run the backend build with:
@@ -91,4 +108,4 @@ npx -y bun@1.3.10 run build
 
 - The current desktop shell already preserves the session experience while adding project tabs.
 - `.ideaspace` is the intended config/workspace home going forward.
-- More aggressive repo cleanup and full OpenCode removal can happen after the hackathon starter is in a better place.
+- Desktop work should not be blocked by tests or CI tied to removed non-desktop surfaces.

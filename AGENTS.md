@@ -4,8 +4,9 @@
 - Current product direction: project tabs for `Workspace`, `Tasks`, `Agents`, `Context`, and `Session` while keeping the existing AI/session flow important.
 - Current implementation focus is limited to `packages/app`, `packages/desktop`, and desktop-supporting runtime/config work in `packages/opencode`.
 - Prefer `.ideaspace` behavior and Ideaspace desktop/runtime branding where practical.
-- Do **not** broaden work into TUI/CLI cleanup or unrelated package renames unless explicitly asked.
-- For this phase, package-level build health is a sufficient verification bar when full repo cleanup is out of scope.
+- Non-desktop delivery surfaces have been trimmed out for the hackathon: no Electron desktop, no Slack app, no enterprise app, no console app, and no editor extensions.
+- Keep `packages/web` and existing TUI/CLI code passive for now; they are out of active feature scope and should not gate desktop verification.
+- For this phase, desktop-stack health is the verification bar: `packages/app`, `packages/desktop`, and `packages/opencode` plus their shared dependencies.
 - If the user wants a local macOS desktop build, follow `packages/desktop/BUILD_APP.md`. The verified Apple Silicon flow is `cd packages/desktop && TAURI_ENV_TARGET_TRIPLE=aarch64-apple-darwin npx -y bun@1.3.10 ./scripts/predev.ts && npx -y bun@1.3.10 run tauri build`.
 
 - To regenerate the JavaScript SDK, run `./packages/sdk/js/script/build.ts`.

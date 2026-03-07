@@ -1,6 +1,6 @@
-# Contributing to OpenCode
+# Contributing to Ideaspace
 
-We want to make it easy for you to contribute to OpenCode. Here are the most common type of changes that get merged:
+We want to make it easy for you to contribute to Ideaspace. Here are the most common type of changes that get merged:
 
 - Bug fixes
 - Additional LSPs / Formatters
@@ -29,15 +29,23 @@ Want to take on an issue? Leave a comment and a maintainer may assign it to you 
 New providers shouldn't require many if ANY code changes, but if you want to add support for a new provider first make a PR to:
 https://github.com/anomalyco/models.dev
 
-## Developing OpenCode
+## Developing Ideaspace
 
 - Requirements: Bun 1.3+
-- Install dependencies and start the dev server from the repo root:
+- Install dependencies and start the backend from the repo root:
 
   ```bash
   bun install
   bun dev
   ```
+
+For hackathon work, the active product surface is the desktop stack:
+
+- `packages/opencode`: runtime/backend used by the desktop app
+- `packages/app`: shared Ideaspace UI shell
+- `packages/desktop`: native Tauri desktop wrapper
+- `packages/plugin`: source for `@opencode-ai/plugin` and runtime plugin types
+- `packages/script`: shared build metadata/helpers consumed by desktop/runtime build scripts
 
 ### Running against a different directory
 
@@ -47,7 +55,7 @@ By default, `bun dev` runs OpenCode in the `packages/opencode` directory. To run
 bun dev <directory>
 ```
 
-To run OpenCode in the root of the opencode repo itself:
+To run Ideaspace in the root of this repo itself:
 
 ```bash
 bun dev .
@@ -69,12 +77,7 @@ Then run it with:
 
 Replace `<platform>` with your platform (e.g., `darwin-arm64`, `linux-x64`).
 
-- Core pieces:
-  - `packages/opencode`: OpenCode core business logic & server.
-  - `packages/opencode/src/cli/cmd/tui/`: The TUI code, written in SolidJS with [opentui](https://github.com/sst/opentui)
-  - `packages/app`: The shared web UI components, written in SolidJS
-  - `packages/desktop`: The native desktop app, built with Tauri (wraps `packages/app`)
-  - `packages/plugin`: Source for `@opencode-ai/plugin`
+- Existing TUI/CLI code is still in the repo, but it is not an active hackathon verification target.
 
 ### Understanding bun dev vs opencode
 
@@ -139,19 +142,19 @@ If you only want the web dev server (no native shell):
 bun run --cwd packages/desktop dev
 ```
 
-To create a production `dist/` and build the native app bundle:
+To create a production `dist/` for the desktop shell:
 
 ```bash
-bun run --cwd packages/desktop tauri build
+bun run --cwd packages/desktop build
 ```
 
-This runs `bun run --cwd packages/desktop build` automatically via Tauri’s `beforeBuildCommand`.
+For a real macOS `.app` or `.dmg`, use `packages/desktop/BUILD_APP.md`. The Tauri bundle flow needs the sidecar prep step from that guide before `tauri build`.
 
 > [!NOTE]
 > Running the desktop app requires additional Tauri dependencies (Rust toolchain, platform-specific libraries). See the [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/) for setup instructions.
 
 > [!NOTE]
-> If you make changes to the API or SDK (e.g. `packages/opencode/src/server/server.ts`), run `./script/generate.ts` to regenerate the SDK and related files.
+> If you make changes to the API or SDK (e.g. `packages/opencode/src/server/server.ts`), run `./packages/sdk/js/script/build.ts` to regenerate the JavaScript SDK.
 
 Please try to follow the [style guide](./AGENTS.md)
 
@@ -176,9 +179,7 @@ Other tips and tricks:
 - You might want to use `--inspect-wait` or `--inspect-brk` instead of `--inspect`, depending on your workflow
 - Specifying `--inspect=ws://localhost:6499/` on every invocation can be tiresome, you may want to `export BUN_OPTIONS=--inspect=ws://localhost:6499/` instead
 
-#### VSCode Setup
-
-If you use VSCode, you can use our example configurations [.vscode/settings.example.json](.vscode/settings.example.json) and [.vscode/launch.example.json](.vscode/launch.example.json).
+#### Editor debugging notes
 
 Some debug methods that can be problematic:
 
