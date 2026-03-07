@@ -49,6 +49,8 @@ import { useTheme, type ColorScheme } from "@opencode-ai/ui/theme"
 import { DialogSelectProvider } from "@/components/dialog-select-provider"
 import { DialogSelectServer } from "@/components/dialog-select-server"
 import { DialogSettings } from "@/components/dialog-settings"
+import { AgentsProvider } from "@/context/agents"
+import AgentsPage from "@/pages/agents"
 import { useCommand, type CommandOption } from "@/context/command"
 import { ConstrainDragXAxis } from "@/utils/solid-dnd"
 import { DialogSelectDirectory } from "@/components/dialog-select-directory"
@@ -955,6 +957,12 @@ export default function Layout(props: ParentProps) {
         onSelect: () => openSettings(),
       },
       {
+        id: "agents.open",
+        title: language.t("command.agents.open"),
+        category: language.t("command.category.settings"),
+        onSelect: () => openAgents(),
+      },
+      {
         id: "session.previous",
         title: language.t("command.session.previous"),
         category: language.t("command.category.session"),
@@ -1100,6 +1108,14 @@ export default function Layout(props: ParentProps) {
 
   function openSettings() {
     dialog.show(() => <DialogSettings />)
+  }
+
+  function openAgents() {
+    dialog.show(() => (
+      <AgentsProvider>
+        <AgentsPage />
+      </AgentsProvider>
+    ))
   }
 
   function projectRoot(directory: string) {
@@ -2156,6 +2172,8 @@ export default function Layout(props: ParentProps) {
               settingsLabel={() => language.t("sidebar.settings")}
               settingsKeybind={() => command.keybind("settings.open")}
               onOpenSettings={openSettings}
+              agentsLabel={() => language.t("sidebar.agents")}
+              onOpenAgents={openAgents}
               helpLabel={() => language.t("sidebar.help")}
               onOpenHelp={() => platform.openLink("https://github.com/AndreDalwin/Ideaspace/issues/new/choose")}
               renderPanel={() => (
@@ -2231,6 +2249,8 @@ export default function Layout(props: ParentProps) {
               settingsLabel={() => language.t("sidebar.settings")}
               settingsKeybind={() => command.keybind("settings.open")}
               onOpenSettings={openSettings}
+              agentsLabel={() => language.t("sidebar.agents")}
+              onOpenAgents={openAgents}
               helpLabel={() => language.t("sidebar.help")}
               onOpenHelp={() => platform.openLink("https://github.com/AndreDalwin/Ideaspace/issues/new/choose")}
               renderPanel={() => <SidebarPanel project={currentProject()} mobile />}

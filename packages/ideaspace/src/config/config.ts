@@ -1026,6 +1026,9 @@ export namespace Config {
       small_model: ModelId.describe(
         "Small model to use for tasks like title generation in the format of provider/model",
       ).optional(),
+      image_model: ModelId.describe(
+        "Image model to use for image generation in the format of provider/model",
+      ).optional(),
       default_agent: z
         .string()
         .optional()
@@ -1289,6 +1292,7 @@ export namespace Config {
   }
 
   export async function update(config: Info) {
+    Info.parse(config)
     const filepath = path.join(Instance.directory, "ideaspace.json")
     const existing = await loadFile(filepath)
     await Filesystem.writeJson(filepath, mergeDeep(existing, config))

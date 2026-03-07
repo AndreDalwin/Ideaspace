@@ -27,6 +27,7 @@ interface PermissionState {
   fileRead: PermissionLevel
   fileEdit: PermissionLevel
   filePaths: string
+  imageGenerate: PermissionLevel
   webfetch: PermissionLevel
   websearch: PermissionLevel
   bash: PermissionLevel
@@ -96,6 +97,11 @@ function list(value: string) {
 function sameMap(a: Record<string, PermissionLevel>, b: Record<string, PermissionLevel>) {
   const keys = Array.from(new Set([...Object.keys(a), ...Object.keys(b)])).sort()
   return keys.every((key) => a[key] === b[key])
+}
+
+function sameSet(a: Set<string>, b: Set<string>) {
+  if (a.size !== b.size) return false
+  return [...a].every((item) => b.has(item))
 }
 
 function PermissionRow(props: {
@@ -171,6 +177,7 @@ export const AgentDetail: Component = () => {
       fileRead: "deny" as PermissionLevel,
       fileEdit: "deny" as PermissionLevel,
       filePaths: "",
+      imageGenerate: "deny" as PermissionLevel,
       webfetch: "deny" as PermissionLevel,
       websearch: "deny" as PermissionLevel,
       bash: "deny" as PermissionLevel,
@@ -178,6 +185,7 @@ export const AgentDetail: Component = () => {
       other: "deny" as PermissionLevel,
     } satisfies PermissionState,
   })
+
   const [form, setForm] = createStore<FormState>({
     name: "",
     description: "",
@@ -200,6 +208,7 @@ export const AgentDetail: Component = () => {
       fileRead: "deny" as PermissionLevel,
       fileEdit: "deny" as PermissionLevel,
       filePaths: "",
+      imageGenerate: "deny" as PermissionLevel,
       webfetch: "deny" as PermissionLevel,
       websearch: "deny" as PermissionLevel,
       bash: "deny" as PermissionLevel,
@@ -246,10 +255,17 @@ export const AgentDetail: Component = () => {
 
   const subagents = () => agents.subagents.filter((item) => item.name !== selected())
 
+  const [selectedAgent, setSelectedAgent] = createSignal<Agent | undefined>(undefined)
+
   const agent = () => {
     const name = selected()
-    if (!name) return undefined
-    return agents.get(name)
+    if (!name) return selectedAgent()
+    const fromList = agents.get(name)
+    if (fromList) {
+      setSelectedAgent(fromList)
+      return fromList
+    }
+    return selectedAgent()
   }
 
   onMount(async () => {
@@ -362,6 +378,7 @@ export const AgentDetail: Component = () => {
     const mcp = Array.isArray(cfg?.mcps) ? cfg.mcps.filter((item): item is string => typeof item === "string") : []
     const read = permissionState(a.permission, "read")
     const edit = permissionState(a.permission, "edit")
+    const imageGenerate = permissionState(a.permission, "image_generate")
     const webfetch = permissionState(a.permission, "webfetch")
     const websearch = permissionState(a.permission, "websearch")
     const bash = permissionState(a.permission, "bash")
@@ -382,6 +399,7 @@ export const AgentDetail: Component = () => {
         fileRead: read.rule,
         fileEdit: edit.rule,
         filePaths: allowed(edit.item),
+        imageGenerate: imageGenerate.rule,
         webfetch: webfetch.rule,
         websearch: websearch.rule,
         bash: bash.rule,
@@ -411,6 +429,7 @@ export const AgentDetail: Component = () => {
       fileRead: next.perms.fileRead,
       fileEdit: next.perms.fileEdit,
       filePaths: next.perms.filePaths,
+      imageGenerate: next.perms.imageGenerate,
       webfetch: next.perms.webfetch,
       websearch: next.perms.websearch,
       bash: next.perms.bash,
@@ -502,6 +521,9 @@ export const AgentDetail: Component = () => {
       if (store.perms.fileEdit !== base.perms.fileEdit || store.perms.filePaths !== base.perms.filePaths) {
         setPermission("edit", pack(store.perms.fileEdit, store.perms.filePaths))
       }
+      if (store.perms.imageGenerate !== base.perms.imageGenerate) {
+        setPermission("image_generate", store.perms.imageGenerate)
+      }
       if (store.perms.webfetch !== base.perms.webfetch) setPermission("webfetch", store.perms.webfetch)
       if (store.perms.websearch !== base.perms.websearch) setPermission("websearch", store.perms.websearch)
       if (store.perms.bash !== base.perms.bash || store.perms.bashPaths !== base.perms.bashPaths) {
@@ -535,9 +557,23 @@ export const AgentDetail: Component = () => {
         agent: next,
       })
       await agents.reload()
-      setSelected(form.name)
+
       const refreshed = agents.get(form.name)
-      if (refreshed) loadAgentData(refreshed)
+      if (refreshed) setSelectedAgent(refreshed)
+
+      setBase({
+        name: form.name,
+        description: form.description,
+        mode: form.mode,
+        prompt: prompt(),
+        model: store.model,
+        variant: store.variant,
+        steps: store.steps,
+        hidden: store.hidden,
+        taskRule: store.taskRule,
+        taskItem: { ...store.taskItem },
+        perms: { ...store.perms },
+      })
 
       setForm("isEditing", false)
       setStore("isEditing", false)
@@ -557,11 +593,28 @@ export const AgentDetail: Component = () => {
     }
   }
 
-  const isDirty = () =>
-    form.isEditing ||
-    store.isEditing ||
-    selectedMcps().size !== initialMcps().size ||
-    ![...selectedMcps()].every((m) => initialMcps().has(m))
+  const isDirty = () => {
+    if (form.name !== base.name) return true
+    if (form.description !== base.description) return true
+    if (form.mode !== base.mode) return true
+    if (prompt() !== base.prompt) return true
+    if (store.model !== base.model) return true
+    if (store.variant !== base.variant) return true
+    if (store.steps !== base.steps) return true
+    if (store.hidden !== base.hidden) return true
+    if (store.taskRule !== base.taskRule) return true
+    if (!sameMap(store.taskItem, base.taskItem)) return true
+    if (store.perms.fileRead !== base.perms.fileRead) return true
+    if (store.perms.fileEdit !== base.perms.fileEdit) return true
+    if (store.perms.filePaths !== base.perms.filePaths) return true
+    if (store.perms.imageGenerate !== base.perms.imageGenerate) return true
+    if (store.perms.webfetch !== base.perms.webfetch) return true
+    if (store.perms.websearch !== base.perms.websearch) return true
+    if (store.perms.bash !== base.perms.bash) return true
+    if (store.perms.bashPaths !== base.perms.bashPaths) return true
+    if (store.perms.other !== base.perms.other) return true
+    return !sameSet(selectedMcps(), initialMcps())
+  }
 
   const confirmNavigate = () => {
     if (!isDirty()) return true
@@ -1014,6 +1067,15 @@ export const AgentDetail: Component = () => {
                           <h4 class="text-13-semibold text-text-strong">Tools</h4>
                         </div>
                         <div class="space-y-4 pl-6">
+                          <PermissionRow
+                            label="Image generation"
+                            desc="Generate images with the configured image model"
+                            level={store.perms.imageGenerate}
+                            onChange={(v) => {
+                              setStore("perms", "imageGenerate", v)
+                              setStore("isEditing", true)
+                            }}
+                          />
                           <PermissionRow
                             label="Bash execution"
                             desc="Run shell commands and scripts"
