@@ -1,4 +1,4 @@
-import { Component, createSignal, Show } from "solid-js"
+import { Component, createSignal, Show, createEffect } from "solid-js"
 import { createStore } from "solid-js/store"
 import { AgentList } from "./list"
 import { useAgents } from "@/context/agents"
@@ -7,7 +7,7 @@ import { TextField } from "@opencode-ai/ui/text-field"
 import { Select } from "@opencode-ai/ui/select"
 import { RadioGroup } from "@opencode-ai/ui/radio-group"
 import { Icon } from "@opencode-ai/ui/icon"
-import type { Agent } from "@opencode-ai/sdk/v2/client"
+import type { Agent, AgentConfig } from "@opencode-ai/sdk/v2/client"
 
 type PermissionLevel = "allow" | "ask" | "deny"
 
@@ -20,6 +20,14 @@ interface PermissionState {
   bash: PermissionLevel
   bashPaths: string
   other: PermissionLevel
+}
+
+interface FormState {
+  name: string
+  description: string
+  mode: "primary" | "subagent" | "all"
+  nameError: string | undefined
+  isEditing: boolean
 }
 
 const levelOptions: { value: PermissionLevel; label: string }[] = [
@@ -92,6 +100,13 @@ export const AgentDetail: Component = () => {
       other: "ask" as PermissionLevel,
     } satisfies PermissionState,
   })
+  const [form, setForm] = createStore<FormState>({
+    name: "",
+    description: "",
+    mode: "primary",
+    nameError: undefined,
+    isEditing: false,
+  })
 
   const agent = () => {
     const name = selected()
@@ -99,9 +114,64 @@ export const AgentDetail: Component = () => {
     return agents.get(name)
   }
 
+  createEffect(() => {
+    const a = agent()
+    if (a) {
+      setForm({
+        name: a.name,
+        description: a.description ?? "",
+        mode: a.mode,
+        nameError: undefined,
+        isEditing: false,
+      })
+      setPrompt(a.prompt ?? "")
+    }
+  })
+
+  const validateName = (name: string, currentName: string): string | undefined => {
+    if (!name.trim()) return "Name is required"
+    if (name !== currentName) {
+      const exists = agents.list.some((a) => a.name === name)
+      if (exists) return "An agent with this name already exists"
+    }
+    return undefined
+  }
+
+  const handleNameChange = (value: string) => {
+    const a = agent()
+    if (!a || a.native) return
+
+    setForm("name", value)
+    const error = validateName(value, a.name)
+    setForm("nameError", error)
+    setForm("isEditing", !error)
+  }
+
+  const handleDescriptionChange = (value: string) => {
+    const a = agent()
+    if (!a) return
+
+    setForm("description", value)
+    setForm("isEditing", true)
+
+    const config: Partial<AgentConfig> = { description: value }
+    void agents.update(a.name, config)
+  }
+
+  const handleModeChange = (option: { value: string; label: string } | undefined) => {
+    const a = agent()
+    if (!a || !option) return
+
+    const mode = option.value as "primary" | "subagent" | "all"
+    setForm("mode", mode)
+    setForm("isEditing", true)
+
+    const config: Partial<AgentConfig> = { mode }
+    void agents.update(a.name, config)
+  }
+
   const handleSelect = (a: Agent) => {
     setSelected(a.name)
-    setPrompt(a.prompt ?? "")
   }
 
   return (
@@ -163,7 +233,7 @@ export const AgentDetail: Component = () => {
                       Delete
                     </Button>
                   </Show>
-                  <Button size="small" variant="primary" disabled={!store.isEditing}>
+                  <Button size="small" variant="primary" disabled={!form.isEditing && !store.isEditing}>
                     <Icon name="check" size="small" />
                     Save
                   </Button>
@@ -179,22 +249,27 @@ export const AgentDetail: Component = () => {
                     <div class="space-y-4 rounded-lg bg-surface-raised-base p-4">
                       <TextField
                         label="Name"
-                        value={a().name}
+                        value={form.name}
+                        onChange={handleNameChange}
                         readOnly={a().native}
+                        error={form.nameError}
+                        validationState={form.nameError ? "invalid" : "valid"}
                         description={
                           a().native ? "Built-in agent names cannot be changed" : "Unique identifier for this agent"
                         }
                       />
                       <TextField
                         label="Description"
-                        value={a().description ?? ""}
+                        value={form.description}
+                        onChange={handleDescriptionChange}
                         description="Brief description of the agent's purpose"
                       />
                       <div>
                         <span class="mb-1.5 block text-13-medium text-text-strong">Mode</span>
                         <Select
                           options={modeOptions}
-                          current={modeOptions.find((o) => o.value === a().mode)}
+                          current={modeOptions.find((o) => o.value === form.mode)}
+                          onSelect={handleModeChange}
                           value={(o) => o.value}
                           label={(o) => o.label}
                           variant="secondary"
@@ -300,6 +375,7 @@ export const AgentDetail: Component = () => {
                         </div>
                       </div>
 
+                      {/* Network */}
                       <div class="border-t border-border-weak-base pt-6">
                         <div class="mb-3 flex items-center gap-2">
                           <Icon name="providers" size="small" class="text-text-weak" />
@@ -321,6 +397,7 @@ export const AgentDetail: Component = () => {
                         </div>
                       </div>
 
+                      {/* Tools */}
                       <div class="border-t border-border-weak-base pt-6">
                         <div class="mb-3 flex items-center gap-2">
                           <Icon name="console" size="small" class="text-text-weak" />
