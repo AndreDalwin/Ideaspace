@@ -27,6 +27,7 @@ interface PermissionState {
   fileRead: PermissionLevel
   fileEdit: PermissionLevel
   filePaths: string
+  imageGenerate: PermissionLevel
   webfetch: PermissionLevel
   websearch: PermissionLevel
   bash: PermissionLevel
@@ -171,6 +172,7 @@ export const AgentDetail: Component = () => {
       fileRead: "deny" as PermissionLevel,
       fileEdit: "deny" as PermissionLevel,
       filePaths: "",
+      imageGenerate: "deny" as PermissionLevel,
       webfetch: "deny" as PermissionLevel,
       websearch: "deny" as PermissionLevel,
       bash: "deny" as PermissionLevel,
@@ -200,6 +202,7 @@ export const AgentDetail: Component = () => {
       fileRead: "deny" as PermissionLevel,
       fileEdit: "deny" as PermissionLevel,
       filePaths: "",
+      imageGenerate: "deny" as PermissionLevel,
       webfetch: "deny" as PermissionLevel,
       websearch: "deny" as PermissionLevel,
       bash: "deny" as PermissionLevel,
@@ -362,6 +365,7 @@ export const AgentDetail: Component = () => {
     const mcp = Array.isArray(cfg?.mcps) ? cfg.mcps.filter((item): item is string => typeof item === "string") : []
     const read = permissionState(a.permission, "read")
     const edit = permissionState(a.permission, "edit")
+    const imageGenerate = permissionState(a.permission, "image_generate")
     const webfetch = permissionState(a.permission, "webfetch")
     const websearch = permissionState(a.permission, "websearch")
     const bash = permissionState(a.permission, "bash")
@@ -382,6 +386,7 @@ export const AgentDetail: Component = () => {
         fileRead: read.rule,
         fileEdit: edit.rule,
         filePaths: allowed(edit.item),
+        imageGenerate: imageGenerate.rule,
         webfetch: webfetch.rule,
         websearch: websearch.rule,
         bash: bash.rule,
@@ -411,6 +416,7 @@ export const AgentDetail: Component = () => {
       fileRead: next.perms.fileRead,
       fileEdit: next.perms.fileEdit,
       filePaths: next.perms.filePaths,
+      imageGenerate: next.perms.imageGenerate,
       webfetch: next.perms.webfetch,
       websearch: next.perms.websearch,
       bash: next.perms.bash,
@@ -501,6 +507,9 @@ export const AgentDetail: Component = () => {
       if (store.perms.fileRead !== base.perms.fileRead) setPermission("read", store.perms.fileRead)
       if (store.perms.fileEdit !== base.perms.fileEdit || store.perms.filePaths !== base.perms.filePaths) {
         setPermission("edit", pack(store.perms.fileEdit, store.perms.filePaths))
+      }
+      if (store.perms.imageGenerate !== base.perms.imageGenerate) {
+        setPermission("image_generate", store.perms.imageGenerate)
       }
       if (store.perms.webfetch !== base.perms.webfetch) setPermission("webfetch", store.perms.webfetch)
       if (store.perms.websearch !== base.perms.websearch) setPermission("websearch", store.perms.websearch)
@@ -1014,6 +1023,15 @@ export const AgentDetail: Component = () => {
                           <h4 class="text-13-semibold text-text-strong">Tools</h4>
                         </div>
                         <div class="space-y-4 pl-6">
+                          <PermissionRow
+                            label="Image generation"
+                            desc="Generate images with the configured image model"
+                            level={store.perms.imageGenerate}
+                            onChange={(v) => {
+                              setStore("perms", "imageGenerate", v)
+                              setStore("isEditing", true)
+                            }}
+                          />
                           <PermissionRow
                             label="Bash execution"
                             desc="Run shell commands and scripts"

@@ -55,6 +55,7 @@ export namespace Agent {
     const whitelistedDirs = [Truncate.GLOB, ...skillDirs.map((dir) => path.join(dir, "*"))]
     const defaults = PermissionNext.fromConfig({
       "*": "allow",
+      image_generate: "deny",
       doom_loop: "ask",
       external_directory: {
         "*": "ask",
@@ -83,6 +84,7 @@ export namespace Agent {
           PermissionNext.fromConfig({
             question: "allow",
             plan_enter: "allow",
+            image_generate: "allow",
           }),
           user,
         ),
@@ -98,6 +100,7 @@ export namespace Agent {
           PermissionNext.fromConfig({
             question: "allow",
             plan_exit: "allow",
+            image_generate: "allow",
             external_directory: {
               [path.join(Global.Path.data, "plans", "*")]: "allow",
             },
