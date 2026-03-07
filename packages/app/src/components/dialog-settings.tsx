@@ -9,6 +9,7 @@ import { SettingsImages } from "./settings-images"
 import { SettingsKeybinds } from "./settings-keybinds"
 import { SettingsProviders } from "./settings-providers"
 import { SettingsModels } from "./settings-models"
+import { SettingsSkills } from "./settings-skills"
 
 const SettingsMcp: Component = () => {
   const lang = useLanguage()
@@ -21,21 +22,6 @@ const SettingsMcp: Component = () => {
         </div>
       </div>
       <div class="text-13-regular text-text-secondary">MCP configuration will be available here.</div>
-    </div>
-  )
-}
-
-const SettingsSkills: Component = () => {
-  const lang = useLanguage()
-  return (
-    <div class="flex flex-col gap-6">
-      <div class="flex items-center justify-between sticky top-0 bg-canvas z-10 pb-4 border-b border-border">
-        <div class="flex flex-col gap-1">
-          <h2 class="text-16-semibold">{lang.t("settings.skills.title")}</h2>
-          <p class="text-13-regular text-text-secondary">{lang.t("settings.skills.description")}</p>
-        </div>
-      </div>
-      <div class="text-13-regular text-text-secondary">Skills configuration will be available here.</div>
     </div>
   )
 }

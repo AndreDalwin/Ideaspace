@@ -49,6 +49,11 @@ type MCP = {
   type: "local" | "remote"
 }
 
+type Skill = {
+  name: string
+  description: string
+}
+
 type ModelOption = {
   value: string
   label: string
@@ -165,6 +170,11 @@ export const AgentDetail: Component = () => {
   const [mcps, setMcps] = createSignal<MCP[]>([])
   const [selectedMcps, setSelectedMcps] = createSignal<Set<string>>(new Set())
   const [initialMcps, setInitialMcps] = createSignal<Set<string>>(new Set())
+  const [skills, setSkills] = createSignal<Skill[]>([])
+  const [selectedSkills, setSelectedSkills] = createSignal<Set<string>>(new Set())
+  const [initialSkills, setInitialSkills] = createSignal<Set<string>>(new Set())
+  const [mcpMode, setMcpMode] = createSignal<"inherit" | "explicit">("inherit")
+  const [skillMode, setSkillMode] = createSignal<"inherit" | "explicit">("inherit")
   const [store, setStore] = createStore({
     isEditing: false,
     model: "",
@@ -269,15 +279,24 @@ export const AgentDetail: Component = () => {
   }
 
   onMount(async () => {
-    const result = await sdk.client.mcp.status()
-    if (result.data) {
-      const mcpList: MCP[] = Object.entries(result.data).flatMap(([name, info]) => {
+    const [mcpResult, skillsResult] = await Promise.all([sdk.client.mcp.status(), sdk.client.app.skills()])
+
+    if (mcpResult.data) {
+      const mcpList: MCP[] = Object.entries(mcpResult.data).flatMap(([name, info]) => {
         if (!info || typeof info !== "object") return []
         const status = "status" in info && typeof info.status === "string" ? info.status : "unknown"
         const type = "type" in info && info.type === "remote" ? "remote" : "local"
         return [{ name, status, type }]
       })
       setMcps(mcpList)
+    }
+
+    if (skillsResult.data) {
+      const skillList: Skill[] = skillsResult.data.map((s: { name: string; description: string }) => ({
+        name: s.name,
+        description: s.description,
+      }))
+      setSkills(skillList)
     }
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -299,7 +318,42 @@ export const AgentDetail: Component = () => {
       }
       return next
     })
+    setMcpMode("explicit")
     setStore("isEditing", true)
+  }
+
+  const toggleSkill = (name: string) => {
+    setSelectedSkills((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) {
+        next.delete(name)
+      } else {
+        next.add(name)
+      }
+      return next
+    })
+    setSkillMode("explicit")
+    setStore("isEditing", true)
+  }
+
+  const getInheritedMcps = (mode: "primary" | "subagent" | "all") => {
+    if (mode === "subagent") return new Set<string>()
+    return new Set(mcps().map((m) => m.name))
+  }
+
+  const getInheritedSkills = (mode: "primary" | "subagent" | "all") => {
+    if (mode === "subagent") return new Set<string>()
+    return new Set(skills().map((s) => s.name))
+  }
+
+  const isMcpInherited = (name: string, mode: "primary" | "subagent" | "all") => {
+    if (mode === "subagent") return false
+    return true
+  }
+
+  const isSkillInherited = (name: string, mode: "primary" | "subagent" | "all") => {
+    if (mode === "subagent") return false
+    return true
   }
 
   const validateName = (name: string, currentName: string): string | undefined => {
@@ -375,7 +429,24 @@ export const AgentDetail: Component = () => {
 
   const loadAgentData = (a: Agent) => {
     const cfg = agents.getConfig(a.name)
-    const mcp = Array.isArray(cfg?.mcps) ? cfg.mcps.filter((item): item is string => typeof item === "string") : []
+    const mode = a.mode ?? "primary"
+
+    const rawMcps = (cfg as Record<string, unknown> | undefined)?.mcps
+    const mcpMode: "inherit" | "explicit" = Array.isArray(rawMcps) ? "explicit" : "inherit"
+    const inheritedMcps = getInheritedMcps(mode)
+    const filteredMcps = Array.isArray(rawMcps)
+      ? (rawMcps as unknown[]).filter((item): item is string => typeof item === "string")
+      : []
+    const mcp = mcpMode === "explicit" ? filteredMcps : Array.from(inheritedMcps)
+
+    const rawSkills = (cfg as Record<string, unknown> | undefined)?.skills
+    const skillMode: "inherit" | "explicit" = Array.isArray(rawSkills) ? "explicit" : "inherit"
+    const inheritedSkills = getInheritedSkills(mode)
+    const filteredSkills = Array.isArray(rawSkills)
+      ? (rawSkills as unknown[]).filter((item): item is string => typeof item === "string")
+      : []
+    const skillList = skillMode === "explicit" ? filteredSkills : Array.from(inheritedSkills)
+
     const read = permissionState(a.permission, "read")
     const edit = permissionState(a.permission, "edit")
     const imageGenerate = permissionState(a.permission, "image_generate")
@@ -387,7 +458,7 @@ export const AgentDetail: Component = () => {
     const next = {
       name: a.name,
       description: a.description ?? "",
-      mode: a.mode ?? "primary",
+      mode: mode,
       prompt: cfg?.prompt ?? a.prompt ?? "",
       model: cfg?.model ?? (a.model ? `${a.model.providerID}/${a.model.modelID}` : ""),
       variant: cfg?.variant ?? a.variant ?? "",
@@ -438,9 +509,18 @@ export const AgentDetail: Component = () => {
     })
     setBase(next)
 
-    const selectedMcps = new Set<string>(mcp)
-    setSelectedMcps(selectedMcps)
-    setInitialMcps(new Set(selectedMcps))
+    // Set MCP state
+    const selectedMcpsSet = new Set<string>(mcp)
+    setSelectedMcps(selectedMcpsSet)
+    setInitialMcps(new Set(selectedMcpsSet))
+    setMcpMode(mcpMode)
+
+    // Set Skills state
+    const selectedSkillsSet = new Set<string>(skillList)
+    setSelectedSkills(selectedSkillsSet)
+    setInitialSkills(new Set(selectedSkillsSet))
+    setSkillMode(skillMode)
+
     setStore("isEditing", false)
   }
 
