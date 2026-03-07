@@ -5,8 +5,56 @@ import { useAgents } from "@/context/agents"
 import { Button } from "@opencode-ai/ui/button"
 import { TextField } from "@opencode-ai/ui/text-field"
 import { Select } from "@opencode-ai/ui/select"
+import { RadioGroup } from "@opencode-ai/ui/radio-group"
 import { Icon } from "@opencode-ai/ui/icon"
 import type { Agent } from "@opencode-ai/sdk/v2/client"
+
+type PermissionLevel = "allow" | "ask" | "deny"
+
+interface PermissionState {
+  fileRead: PermissionLevel
+  fileEdit: PermissionLevel
+  filePaths: string
+  webfetch: PermissionLevel
+  websearch: PermissionLevel
+  bash: PermissionLevel
+  bashPaths: string
+  other: PermissionLevel
+}
+
+const levelOptions: { value: PermissionLevel; label: string }[] = [
+  { value: "allow", label: "Allow" },
+  { value: "ask", label: "Ask" },
+  { value: "deny", label: "Deny" },
+]
+
+function PermissionRow(props: {
+  label: string
+  desc: string
+  level: PermissionLevel
+  onChange: (v: PermissionLevel) => void
+  children?: any
+}) {
+  return (
+    <div class="space-y-3">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h4 class="text-13-medium text-text-strong">{props.label}</h4>
+          <p class="text-12-regular text-text-weak">{props.desc}</p>
+        </div>
+        <RadioGroup
+          options={levelOptions}
+          current={levelOptions.find((o) => o.value === props.level)}
+          value={(o) => o.value}
+          label={(o) => o.label}
+          onSelect={(o) => o && props.onChange(o.value)}
+          size="small"
+        />
+      </div>
+      {props.children}
+    </div>
+  )
+}
 
 const promptPlaceholder = `You are a helpful coding assistant. Your role is to:
 
@@ -33,6 +81,16 @@ export const AgentDetail: Component = () => {
   const [prompt, setPrompt] = createSignal("")
   const [store, setStore] = createStore({
     isEditing: false,
+    perms: {
+      fileRead: "ask" as PermissionLevel,
+      fileEdit: "ask" as PermissionLevel,
+      filePaths: "",
+      webfetch: "ask" as PermissionLevel,
+      websearch: "ask" as PermissionLevel,
+      bash: "ask" as PermissionLevel,
+      bashPaths: "",
+      other: "ask" as PermissionLevel,
+    } satisfies PermissionState,
   })
 
   const agent = () => {
@@ -210,29 +268,96 @@ export const AgentDetail: Component = () => {
                   {/* Permissions Section */}
                   <section>
                     <h3 class="mb-4 text-14-medium text-text-strong">Permissions</h3>
-                    <div class="space-y-4 rounded-lg bg-surface-raised-base p-4">
+                    <div class="space-y-6 rounded-lg bg-surface-raised-base p-4">
                       <div>
-                        <h4 class="text-13-medium text-text-strong">File System</h4>
-                        <p class="text-12-regular text-text-weak">Control file read and edit permissions</p>
-                        <div class="mt-2 flex items-center gap-2 text-13-regular text-text-weak">
-                          <Icon name="folder" size="small" />
-                          <span>File permissions placeholder</span>
+                        <div class="mb-3 flex items-center gap-2">
+                          <Icon name="folder" size="small" class="text-text-weak" />
+                          <h4 class="text-13-semibold text-text-strong">File System</h4>
+                        </div>
+                        <div class="space-y-4 pl-6">
+                          <PermissionRow
+                            label="Read files"
+                            desc="Access file contents for reading"
+                            level={store.perms.fileRead}
+                            onChange={(v) => setStore("perms", "fileRead", v)}
+                          />
+                          <PermissionRow
+                            label="Edit files"
+                            desc="Modify and write file contents"
+                            level={store.perms.fileEdit}
+                            onChange={(v) => setStore("perms", "fileEdit", v)}
+                          >
+                            <TextField
+                              label="Allowed paths"
+                              multiline
+                              value={store.perms.filePaths}
+                              onChange={(v) => setStore("perms", "filePaths", v)}
+                              placeholder="One path pattern per line...&#10;*&#10;src/**/*&#10;!*.secret"
+                              description="Glob patterns for allowed file paths"
+                              class="min-h-[80px]"
+                            />
+                          </PermissionRow>
                         </div>
                       </div>
-                      <div class="border-t border-border-weak-base pt-4">
-                        <h4 class="text-13-medium text-text-strong">Network</h4>
-                        <p class="text-12-regular text-text-weak">Web fetch and search permissions</p>
-                        <div class="mt-2 flex items-center gap-2 text-13-regular text-text-weak">
-                          <Icon name="providers" size="small" />
-                          <span>Network permissions placeholder</span>
+
+                      <div class="border-t border-border-weak-base pt-6">
+                        <div class="mb-3 flex items-center gap-2">
+                          <Icon name="providers" size="small" class="text-text-weak" />
+                          <h4 class="text-13-semibold text-text-strong">Network</h4>
+                        </div>
+                        <div class="space-y-4 pl-6">
+                          <PermissionRow
+                            label="Web fetch"
+                            desc="Make HTTP requests to external APIs"
+                            level={store.perms.webfetch}
+                            onChange={(v) => setStore("perms", "webfetch", v)}
+                          />
+                          <PermissionRow
+                            label="Web search"
+                            desc="Search the internet for information"
+                            level={store.perms.websearch}
+                            onChange={(v) => setStore("perms", "websearch", v)}
+                          />
                         </div>
                       </div>
-                      <div class="border-t border-border-weak-base pt-4">
-                        <h4 class="text-13-medium text-text-strong">Tools</h4>
-                        <p class="text-12-regular text-text-weak">Shell and bash execution permissions</p>
-                        <div class="mt-2 flex items-center gap-2 text-13-regular text-text-weak">
-                          <Icon name="console" size="small" />
-                          <span>Tool permissions placeholder</span>
+
+                      <div class="border-t border-border-weak-base pt-6">
+                        <div class="mb-3 flex items-center gap-2">
+                          <Icon name="console" size="small" class="text-text-weak" />
+                          <h4 class="text-13-semibold text-text-strong">Tools</h4>
+                        </div>
+                        <div class="space-y-4 pl-6">
+                          <PermissionRow
+                            label="Bash execution"
+                            desc="Run shell commands and scripts"
+                            level={store.perms.bash}
+                            onChange={(v) => setStore("perms", "bash", v)}
+                          >
+                            <TextField
+                              label="Allowed paths"
+                              multiline
+                              value={store.perms.bashPaths}
+                              onChange={(v) => setStore("perms", "bashPaths", v)}
+                              placeholder="One working directory per line...&#10;/project&#10;/tmp"
+                              description="Directories where bash commands can be executed"
+                              class="min-h-[80px]"
+                            />
+                          </PermissionRow>
+                        </div>
+                      </div>
+
+                      <div class="border-t border-border-weak-base pt-6">
+                        <div class="mb-3 flex items-center gap-2">
+                          <Icon name="sliders" size="small" class="text-text-weak" />
+                          <h4 class="text-13-semibold text-text-strong">Other</h4>
+                        </div>
+                        <div class="pl-6">
+                          <PermissionRow
+                            label="Other permissions"
+                            desc="Access to additional tools and APIs"
+                            level={store.perms.other}
+                            onChange={(v) => setStore("perms", "other", v)}
+                          />
                         </div>
                       </div>
                     </div>
