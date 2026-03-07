@@ -17,9 +17,11 @@ import { Switch } from "@opencode-ai/ui/switch"
 import { showToast } from "@opencode-ai/ui/toast"
 import { useLanguage } from "@/context/language"
 import { DialogCreateAgent } from "@/components/dialog-create-agent"
-import type { Agent, AgentConfig, PermissionConfig, PermissionRuleConfig } from "@opencode-ai/sdk/v2/client"
+import type { Agent, AgentConfig, PermissionRuleConfig } from "@opencode-ai/sdk/v2/client"
+import { formatServerError } from "@/utils/server-errors"
 
-type PermissionLevel = "allow" | "ask" | "deny"
+type PermissionValue = "allow" | "ask" | "deny"
+type PermissionLevel = "allow" | "deny"
 
 interface PermissionState {
   fileRead: PermissionLevel
@@ -53,33 +55,47 @@ type ModelOption = {
 
 const levelOptions: { value: PermissionLevel; label: string }[] = [
   { value: "allow", label: "Allow" },
-  { value: "ask", label: "Ask" },
   { value: "deny", label: "Deny" },
 ]
 
-const valid = new Set<PermissionLevel>(["allow", "ask", "deny"])
+const valid = new Set<PermissionValue>(["allow", "ask", "deny"])
 
-function level(value: unknown, fallback: PermissionLevel = "ask"): PermissionLevel {
-  if (typeof value === "string" && valid.has(value as PermissionLevel)) return value as PermissionLevel
+function level(value: unknown, fallback: PermissionLevel = "deny"): PermissionLevel {
+  if (value === "allow") return "allow"
+  if (typeof value === "string" && valid.has(value as PermissionValue)) return "deny"
   return fallback
 }
 
-function taskState(value: PermissionRuleConfig | undefined) {
-  if (typeof value === "string") return { rule: value as PermissionLevel, item: {} as Record<string, PermissionLevel> }
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return { rule: "ask" as PermissionLevel, item: {} as Record<string, PermissionLevel> }
+function permissionState(rules: Agent["permission"], permission: string) {
+  const scoped = rules.filter((rule) => rule.permission === permission)
+  const item = new Map<string, PermissionLevel>()
+  for (const rule of scoped) {
+    if (rule.pattern === "*") continue
+    item.set(rule.pattern, level(rule.action))
   }
+  return {
+    rule: level(scoped.findLast((rule) => rule.pattern === "*")?.action),
+    item: Object.fromEntries(item),
+  }
+}
 
-  const rule = level(value["*"])
-  const item = Object.fromEntries(
-    Object.entries(value).flatMap(([key, item]) => {
-      if (key === "*") return []
-      if (typeof item !== "string") return []
-      if (!valid.has(item as PermissionLevel)) return []
-      return [[key, item as PermissionLevel]]
-    }),
-  )
-  return { rule, item }
+function allowed(item: Record<string, PermissionLevel>) {
+  return Object.entries(item)
+    .filter((entry) => entry[1] === "allow")
+    .map((entry) => entry[0])
+    .join("\n")
+}
+
+function list(value: string) {
+  return value
+    .split("\n")
+    .map((item) => item.trim())
+    .filter((item, index, all) => item.length > 0 && all.indexOf(item) === index)
+}
+
+function sameMap(a: Record<string, PermissionLevel>, b: Record<string, PermissionLevel>) {
+  const keys = Array.from(new Set([...Object.keys(a), ...Object.keys(b)])).sort()
+  return keys.every((key) => a[key] === b[key])
 }
 
 function PermissionRow(props: {
@@ -147,20 +163,19 @@ export const AgentDetail: Component = () => {
     isEditing: false,
     model: "",
     variant: "",
-    temperature: "",
     steps: "",
     hidden: false,
-    taskRule: "ask" as PermissionLevel,
+    taskRule: "deny" as PermissionLevel,
     taskItem: {} as Record<string, PermissionLevel>,
     perms: {
-      fileRead: "ask" as PermissionLevel,
-      fileEdit: "ask" as PermissionLevel,
+      fileRead: "deny" as PermissionLevel,
+      fileEdit: "deny" as PermissionLevel,
       filePaths: "",
-      webfetch: "ask" as PermissionLevel,
-      websearch: "ask" as PermissionLevel,
-      bash: "ask" as PermissionLevel,
+      webfetch: "deny" as PermissionLevel,
+      websearch: "deny" as PermissionLevel,
+      bash: "deny" as PermissionLevel,
       bashPaths: "",
-      other: "ask" as PermissionLevel,
+      other: "deny" as PermissionLevel,
     } satisfies PermissionState,
   })
   const [form, setForm] = createStore<FormState>({
@@ -169,6 +184,28 @@ export const AgentDetail: Component = () => {
     mode: "primary",
     nameError: undefined,
     isEditing: false,
+  })
+  const [base, setBase] = createStore({
+    name: "",
+    description: "",
+    mode: "primary" as FormState["mode"],
+    prompt: "",
+    model: "",
+    variant: "",
+    steps: "",
+    hidden: false,
+    taskRule: "deny" as PermissionLevel,
+    taskItem: {} as Record<string, PermissionLevel>,
+    perms: {
+      fileRead: "deny" as PermissionLevel,
+      fileEdit: "deny" as PermissionLevel,
+      filePaths: "",
+      webfetch: "deny" as PermissionLevel,
+      websearch: "deny" as PermissionLevel,
+      bash: "deny" as PermissionLevel,
+      bashPaths: "",
+      other: "deny" as PermissionLevel,
+    },
   })
   const [saving, setSaving] = createSignal(false)
 
@@ -230,7 +267,6 @@ export const AgentDetail: Component = () => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty()) {
         e.preventDefault()
-        e.returnValue = ""
       }
     }
     window.addEventListener("beforeunload", handleBeforeUnload)
@@ -275,9 +311,6 @@ export const AgentDetail: Component = () => {
 
     setForm("description", value)
     setForm("isEditing", true)
-
-    const config: Partial<AgentConfig> = { description: value }
-    void agents.update(a.name, config)
   }
 
   const handleModeChange = (option: { value: string; label: string } | undefined) => {
@@ -287,43 +320,108 @@ export const AgentDetail: Component = () => {
     const mode = option.value as "primary" | "subagent" | "all"
     setForm("mode", mode)
     setForm("isEditing", true)
+    if (mode !== "subagent") setStore("hidden", false)
+  }
 
-    const config: Partial<AgentConfig> = { mode }
-    void agents.update(a.name, config)
+  const handleModelChange = (option: ModelOption | undefined) => {
+    setStore("model", option?.value ?? "")
+    if (!option?.value) {
+      setStore("variant", "")
+      setStore("isEditing", true)
+      return
+    }
+
+    const next = models.list().find((item) => `${item.provider.id}/${item.id}` === option.value)
+    if (!next?.variants || !Object.keys(next.variants).includes(store.variant)) setStore("variant", "")
+    setStore("isEditing", true)
+  }
+
+  const handleVariantChange = (option: ModelOption | undefined) => {
+    setStore("variant", option?.value ?? "")
+    setStore("isEditing", true)
+  }
+
+  const handleStepsChange = (value: string) => {
+    setStore("steps", value)
+    setStore("isEditing", true)
+  }
+
+  const handleTaskRuleChange = (option: { value: PermissionLevel; label: string } | undefined) => {
+    if (!option) return
+    setStore("taskRule", option.value)
+    setStore("isEditing", true)
+  }
+
+  const handleTaskItemChange = (name: string, value: PermissionLevel) => {
+    setStore("taskItem", name, value)
+    setStore("isEditing", true)
   }
 
   const loadAgentData = (a: Agent) => {
     const cfg = agents.getConfig(a.name)
-    const perms = cfg?.permission ?? {}
-    const permsObj = typeof perms === "object" && perms !== null ? perms : {}
     const mcp = Array.isArray(cfg?.mcps) ? cfg.mcps.filter((item): item is string => typeof item === "string") : []
-
-    setForm({
+    const read = permissionState(a.permission, "read")
+    const edit = permissionState(a.permission, "edit")
+    const webfetch = permissionState(a.permission, "webfetch")
+    const websearch = permissionState(a.permission, "websearch")
+    const bash = permissionState(a.permission, "bash")
+    const other = permissionState(a.permission, "other")
+    const task = permissionState(a.permission, "task")
+    const next = {
       name: a.name,
       description: a.description ?? "",
       mode: a.mode ?? "primary",
+      prompt: cfg?.prompt ?? a.prompt ?? "",
+      model: cfg?.model ?? (a.model ? `${a.model.providerID}/${a.model.modelID}` : ""),
+      variant: cfg?.variant ?? a.variant ?? "",
+      steps: cfg?.steps?.toString() ?? a.steps?.toString() ?? "",
+      hidden: (cfg?.hidden ?? a.hidden) === true,
+      taskRule: task.rule,
+      taskItem: task.item,
+      perms: {
+        fileRead: read.rule,
+        fileEdit: edit.rule,
+        filePaths: allowed(edit.item),
+        webfetch: webfetch.rule,
+        websearch: websearch.rule,
+        bash: bash.rule,
+        bashPaths: allowed(bash.item),
+        other: other.rule,
+      },
+    }
+
+    setForm({
+      name: next.name,
+      description: next.description,
+      mode: next.mode,
       nameError: undefined,
       isEditing: false,
     })
 
-    setPrompt(cfg?.prompt ?? "")
+    setPrompt(next.prompt)
 
-    const next = new Set<string>(mcp)
-    setSelectedMcps(next)
-    setInitialMcps(new Set(next))
-
-    const filePerms = permsObj as Record<string, unknown>
+    setStore("model", next.model)
+    setStore("variant", next.variant)
+    setStore("steps", next.steps)
+    setStore("hidden", next.hidden)
+    setStore("taskRule", next.taskRule)
+    setStore("taskItem", next.taskItem)
 
     setStore("perms", {
-      fileRead: (filePerms.read as PermissionLevel) ?? "ask",
-      fileEdit: (filePerms.edit as PermissionLevel) ?? "ask",
-      filePaths: ((filePerms.filePaths as string[]) ?? []).join("\n"),
-      webfetch: (filePerms.webfetch as PermissionLevel) ?? "ask",
-      websearch: (filePerms.websearch as PermissionLevel) ?? "ask",
-      bash: (filePerms.bash as PermissionLevel) ?? "ask",
-      bashPaths: ((filePerms.bashPaths as string[]) ?? []).join("\n"),
-      other: (filePerms.other as PermissionLevel) ?? "ask",
+      fileRead: next.perms.fileRead,
+      fileEdit: next.perms.fileEdit,
+      filePaths: next.perms.filePaths,
+      webfetch: next.perms.webfetch,
+      websearch: next.perms.websearch,
+      bash: next.perms.bash,
+      bashPaths: next.perms.bashPaths,
+      other: next.perms.other,
     })
+    setBase(next)
+
+    const selectedMcps = new Set<string>(mcp)
+    setSelectedMcps(selectedMcps)
+    setInitialMcps(new Set(selectedMcps))
     setStore("isEditing", false)
   }
 
@@ -346,33 +444,100 @@ export const AgentDetail: Component = () => {
       return
     }
 
+    const rawSteps = store.steps.trim()
+    const steps = rawSteps ? Number(rawSteps) : undefined
+    if (rawSteps && (!Number.isInteger(steps) || (steps ?? 0) <= 0)) {
+      showToast({
+        title: lang.t("common.requestFailed"),
+        description: "Steps must be a positive whole number",
+      })
+      return
+    }
+
     setSaving(true)
 
     try {
-      const cfg: Partial<AgentConfig> = {
-        description: form.description,
-        mode: form.mode,
-        prompt: prompt(),
-        mcps: Array.from(selectedMcps()),
-        permission: {
-          read: store.perms.fileRead,
-          edit: store.perms.fileEdit,
-          bash: store.perms.bash,
-          webfetch: store.perms.webfetch,
-          websearch: store.perms.websearch,
-          other: store.perms.other,
-          filePaths: store.perms.filePaths
-            .split("\n")
-            .map((p) => p.trim())
-            .filter((p) => p.length > 0),
-          bashPaths: store.perms.bashPaths
-            .split("\n")
-            .map((p) => p.trim())
-            .filter((p) => p.length > 0),
-        },
+      const cfg: Partial<AgentConfig> = {}
+
+      if (form.description !== base.description) cfg.description = form.description
+      if (form.mode !== base.mode) cfg.mode = form.mode
+      if (prompt() !== base.prompt) cfg.prompt = prompt()
+      if (store.model !== base.model) cfg.model = store.model || undefined
+      if (store.variant !== base.variant) cfg.variant = store.variant || undefined
+      if (store.steps !== base.steps) cfg.steps = steps
+      if (form.mode === "subagent" && store.hidden !== base.hidden) cfg.hidden = store.hidden
+      if (form.mode !== "subagent" && base.hidden) cfg.hidden = undefined
+
+      if (selectedMcps().size !== initialMcps().size || ![...selectedMcps()].every((item) => initialMcps().has(item))) {
+        cfg.mcps = Array.from(selectedMcps())
       }
 
-      await agents.update(a.name, cfg)
+      const task = Object.fromEntries(
+        subagents().flatMap((item) => {
+          const value = store.taskItem[item.name] ?? store.taskRule
+          if (value === store.taskRule) return []
+          return [[item.name, value] as const]
+        }),
+      )
+
+      const pack = (rule: PermissionLevel, paths: string) => {
+        const items = Object.fromEntries(list(paths).map((item) => [item, "allow"] as const))
+        if (Object.keys(items).length === 0) return rule
+        return { "*": rule, ...items }
+      }
+
+      const rawPermission = globalSync.data.config.agent?.[a.name]?.permission
+      const nextPermission =
+        rawPermission && typeof rawPermission === "object" && !Array.isArray(rawPermission) ? { ...rawPermission } : {}
+
+      const setPermission = (key: string, value: PermissionRuleConfig | undefined) => {
+        if (value === undefined) {
+          delete nextPermission[key]
+          return
+        }
+        nextPermission[key] = value
+      }
+
+      if (store.perms.fileRead !== base.perms.fileRead) setPermission("read", store.perms.fileRead)
+      if (store.perms.fileEdit !== base.perms.fileEdit || store.perms.filePaths !== base.perms.filePaths) {
+        setPermission("edit", pack(store.perms.fileEdit, store.perms.filePaths))
+      }
+      if (store.perms.webfetch !== base.perms.webfetch) setPermission("webfetch", store.perms.webfetch)
+      if (store.perms.websearch !== base.perms.websearch) setPermission("websearch", store.perms.websearch)
+      if (store.perms.bash !== base.perms.bash || store.perms.bashPaths !== base.perms.bashPaths) {
+        setPermission("bash", pack(store.perms.bash, store.perms.bashPaths))
+      }
+      if (store.perms.other !== base.perms.other) setPermission("other", store.perms.other)
+      if (store.taskRule !== base.taskRule || !sameMap(store.taskItem, base.taskItem)) {
+        const value = Object.keys(task).length === 0 ? store.taskRule : { "*": store.taskRule, ...task }
+        setPermission("task", value)
+      }
+
+      if (Object.keys(nextPermission).length > 0) cfg.permission = nextPermission
+      if (globalSync.data.config.agent?.[a.name]?.permission && Object.keys(nextPermission).length === 0)
+        cfg.permission = undefined
+
+      const current = globalSync.data.config.agent?.[a.name] ?? {}
+      const next = { ...(globalSync.data.config.agent ?? {}) }
+      if (form.name !== a.name) delete next[a.name]
+      next[form.name] = { ...current, ...cfg }
+
+      const defaultAgent =
+        globalSync.data.config.default_agent !== a.name
+          ? globalSync.data.config.default_agent
+          : form.mode === "subagent"
+            ? undefined
+            : form.name
+
+      await globalSync.updateConfig({
+        ...globalSync.data.config,
+        default_agent: defaultAgent,
+        agent: next,
+      })
+      await agents.reload()
+      setSelected(form.name)
+      const refreshed = agents.get(form.name)
+      if (refreshed) loadAgentData(refreshed)
 
       setForm("isEditing", false)
       setStore("isEditing", false)
@@ -385,7 +550,7 @@ export const AgentDetail: Component = () => {
     } catch (err) {
       showToast({
         title: lang.t("common.requestFailed"),
-        description: err instanceof Error ? err.message : String(err),
+        description: formatServerError(err, lang.t),
       })
     } finally {
       setSaving(false)
@@ -448,7 +613,7 @@ export const AgentDetail: Component = () => {
                 } catch (err) {
                   showToast({
                     title: lang.t("common.requestFailed"),
-                    description: err instanceof Error ? err.message : String(err),
+                    description: formatServerError(err, lang.t),
                   })
                 } finally {
                   setDeleting(false)
@@ -495,7 +660,7 @@ export const AgentDetail: Component = () => {
                 } catch (err) {
                   showToast({
                     title: lang.t("common.requestFailed"),
-                    description: err instanceof Error ? err.message : String(err),
+                    description: formatServerError(err, lang.t),
                   })
                 } finally {
                   setResetting(false)
@@ -616,31 +781,123 @@ export const AgentDetail: Component = () => {
                           triggerVariant="settings"
                         />
                       </div>
+                      <Show when={form.mode === "subagent"}>
+                        <div class="flex items-center justify-between rounded-md border border-border-weak-base bg-surface-base px-3 py-2">
+                          <div>
+                            <div class="text-13-medium text-text-strong">Show in subagent picker</div>
+                            <div class="text-12-regular text-text-weak">
+                              Hidden subagents still work, but they won’t appear in autocomplete or quick-pick lists
+                            </div>
+                          </div>
+                          <Switch
+                            checked={!store.hidden}
+                            onChange={(checked) => {
+                              setStore("hidden", !checked)
+                              setStore("isEditing", true)
+                            }}
+                          />
+                        </div>
+                      </Show>
                     </div>
                   </section>
 
-                  {/* Model Section */}
                   <section>
                     <h3 class="mb-4 text-14-medium text-text-strong">Model</h3>
                     <div class="space-y-4 rounded-lg bg-surface-raised-base p-4">
                       <div>
                         <span class="mb-1.5 block text-13-medium text-text-strong">Model</span>
-                        <div class="flex items-center gap-2 text-13-regular text-text-weak">
-                          <Icon name="models" size="small" />
-                          <span>Model selector placeholder</span>
-                        </div>
+                        <Select
+                          options={modelOptions()}
+                          current={modelOptions().find((item) => item.value === store.model)}
+                          onSelect={handleModelChange}
+                          value={(item) => item.value}
+                          label={(item) => item.label}
+                          variant="secondary"
+                          size="small"
+                          triggerVariant="settings"
+                        />
+                        <p class="mt-2 text-12-regular text-text-weak">
+                          Leave this unset to inherit the workspace default model.
+                        </p>
                       </div>
-                      <div>
-                        <span class="mb-1.5 block text-13-medium text-text-strong">Temperature</span>
-                        <div class="flex items-center gap-2 text-13-regular text-text-weak">
-                          <Icon name="sliders" size="small" />
-                          <span>Temperature slider placeholder (0.0 - 2.0)</span>
+                      <Show when={variantOptions().length > 0}>
+                        <div>
+                          <span class="mb-1.5 block text-13-medium text-text-strong">Variant</span>
+                          <Select
+                            options={[{ value: "", label: "Use model default variant" }, ...variantOptions()]}
+                            current={[{ value: "", label: "Use model default variant" }, ...variantOptions()].find(
+                              (item) => item.value === store.variant,
+                            )}
+                            onSelect={handleVariantChange}
+                            value={(item) => item.value}
+                            label={(item) => item.label}
+                            variant="secondary"
+                            size="small"
+                            triggerVariant="settings"
+                          />
                         </div>
+                      </Show>
+                      <div class="grid gap-4 md:grid-cols-1">
+                        <label class="block">
+                          <span class="mb-1.5 block text-13-medium text-text-strong">Max steps</span>
+                          <input
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={store.steps}
+                            onInput={(event) => handleStepsChange(event.currentTarget.value)}
+                            placeholder="Use runtime default"
+                            class="h-10 w-full rounded-md border border-border-weak-base bg-surface-base px-3 text-13-regular text-text-strong placeholder:text-text-weak focus:border-accent-base focus:outline-none"
+                          />
+                          <span class="mt-1 block text-12-regular text-text-weak">
+                            Caps how many agentic iterations run before falling back to text-only output.
+                          </span>
+                        </label>
                       </div>
                     </div>
                   </section>
 
-                  {/* Prompt Section */}
+                  <section>
+                    <h3 class="mb-4 text-14-medium text-text-strong">Subagent Access</h3>
+                    <div class="space-y-4 rounded-lg bg-surface-raised-base p-4">
+                      <div>
+                        <span class="mb-1.5 block text-13-medium text-text-strong">Default access</span>
+                        <p class="mb-3 text-12-regular text-text-weak">
+                          These rules control which subagents this agent can launch through the task tool.
+                        </p>
+                        <RadioGroup
+                          options={levelOptions}
+                          current={levelOptions.find((item) => item.value === store.taskRule)}
+                          value={(item) => item.value}
+                          label={(item) => item.label}
+                          onSelect={handleTaskRuleChange}
+                          size="small"
+                        />
+                      </div>
+                      <Show
+                        when={subagents().length > 0}
+                        fallback={
+                          <div class="text-13-regular text-text-weak">No subagents are currently available.</div>
+                        }
+                      >
+                        <div class="space-y-4 border-t border-border-weak-base pt-4">
+                          <For each={subagents()}>
+                            {(item) => (
+                              <PermissionRow
+                                label={item.name}
+                                desc={
+                                  item.description ?? "Control whether this agent can delegate work to this subagent"
+                                }
+                                level={store.taskItem[item.name] ?? store.taskRule}
+                                onChange={(value) => handleTaskItemChange(item.name, value)}
+                              />
+                            )}
+                          </For>
+                        </div>
+                      </Show>
+                    </div>
+                  </section>
+
                   <section>
                     <button
                       type="button"
@@ -679,7 +936,6 @@ export const AgentDetail: Component = () => {
                     </Show>
                   </section>
 
-                  {/* Permissions Section */}
                   <section>
                     <h3 class="mb-4 text-14-medium text-text-strong">Permissions</h3>
                     <div class="space-y-6 rounded-lg bg-surface-raised-base p-4">

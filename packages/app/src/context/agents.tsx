@@ -61,11 +61,11 @@ export const { use: useAgents, provider: AgentsProvider } = createSimpleContext(
       }
     })
 
-    const list = createMemo(() => store.agents)
+    const list = createMemo(() => store.agents.filter((agent) => agent.hidden !== true))
 
-    const primary = createMemo(() => store.agents.filter((a) => a.mode === "primary" || a.mode === "all"))
+    const primary = createMemo(() => list().filter((a) => a.mode === "primary" || a.mode === "all"))
 
-    const subagents = createMemo(() => store.agents.filter((a) => a.mode === "subagent" || a.mode === "all"))
+    const subagents = createMemo(() => list().filter((a) => a.mode === "subagent" || a.mode === "all"))
 
     const get = (name: string) => {
       return store.agents.find((a) => a.name === name)
