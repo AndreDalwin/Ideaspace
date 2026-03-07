@@ -8,6 +8,18 @@ import { Select } from "@opencode-ai/ui/select"
 import { Icon } from "@opencode-ai/ui/icon"
 import type { Agent } from "@opencode-ai/sdk/v2/client"
 
+const promptPlaceholder = `You are a helpful coding assistant. Your role is to:
+
+- Write clean, maintainable code following best practices
+- Explain your reasoning when making changes
+- Ask clarifying questions when requirements are unclear
+- Consider edge cases and error handling
+
+Example response format:
+1. Brief explanation of the approach
+2. The code solution
+3. Any important considerations`
+
 const modeOptions = [
   { value: "primary", label: "Primary" },
   { value: "subagent", label: "Subagent" },
@@ -17,7 +29,9 @@ const modeOptions = [
 export const AgentDetail: Component = () => {
   const agents = useAgents()
   const [selected, setSelected] = createSignal<string | undefined>(undefined)
-  const [store] = createStore({
+  const [expanded, setExpanded] = createSignal(true)
+  const [prompt, setPrompt] = createSignal("")
+  const [store, setStore] = createStore({
     isEditing: false,
   })
 
@@ -29,6 +43,7 @@ export const AgentDetail: Component = () => {
 
   const handleSelect = (a: Agent) => {
     setSelected(a.name)
+    setPrompt(a.prompt ?? "")
   }
 
   return (
@@ -155,17 +170,41 @@ export const AgentDetail: Component = () => {
 
                   {/* Prompt Section */}
                   <section>
-                    <h3 class="mb-4 text-14-medium text-text-strong">System Prompt</h3>
-                    <div class="rounded-lg bg-surface-raised-base p-4">
-                      <TextField
-                        label="Prompt"
-                        multiline
-                        value=""
-                        placeholder="Enter system prompt instructions..."
-                        description="Instructions that define how this agent behaves"
-                        class="min-h-[150px]"
-                      />
-                    </div>
+                    <button
+                      type="button"
+                      class="mb-4 flex w-full items-center justify-between text-left"
+                      onClick={() => setExpanded(!expanded())}
+                    >
+                      <div>
+                        <h3 class="text-14-medium text-text-strong">System Prompt</h3>
+                        <p class="text-12-regular text-text-weak">Instructions that define how this agent behaves</p>
+                      </div>
+                      <Icon name={expanded() ? "chevron-down" : "chevron-right"} size="small" class="text-text-weak" />
+                    </button>
+                    <Show when={expanded()}>
+                      <div class="space-y-2 rounded-lg bg-surface-raised-base p-4">
+                        <textarea
+                          value={prompt()}
+                          onInput={(e) => {
+                            setPrompt(e.currentTarget.value)
+                            setStore("isEditing", true)
+                          }}
+                          placeholder={promptPlaceholder}
+                          class="min-h-[200px] w-full resize-y rounded-md border border-border-weak-base bg-surface-base px-3 py-2 text-13-regular text-text-strong placeholder:text-text-weak focus:border-accent-base focus:outline-none"
+                        />
+                        <div class="flex justify-end">
+                          <span
+                            class={
+                              prompt().length > 4000
+                                ? "text-12-regular text-danger-base"
+                                : "text-12-regular text-text-weak"
+                            }
+                          >
+                            {prompt().length.toLocaleString()} / 4,000
+                          </span>
+                        </div>
+                      </div>
+                    </Show>
                   </section>
 
                   {/* Permissions Section */}
