@@ -11,6 +11,7 @@ import {
   onCleanup,
   Index,
   type JSX,
+  type Accessor,
 } from "solid-js"
 import stripAnsi from "strip-ansi"
 import { Dynamic } from "solid-js/web"
@@ -53,6 +54,69 @@ import { AnimatedCountList } from "./tool-count-summary"
 import { ToolStatusTitle } from "./tool-status-title"
 import { animate } from "motion"
 import { useLocation } from "@solidjs/router"
+
+interface FileAttachmentProps {
+  file: FilePart
+  onClick?: () => void
+  dataQueued?: boolean
+}
+
+function FileAttachmentItem(props: FileAttachmentProps) {
+  const i18n = useI18n()
+  const isImage = () => props.file.mime.startsWith("image/")
+
+  return (
+    <div
+      data-slot="user-message-attachment"
+      data-type={isImage() ? "image" : "file"}
+      data-queued={props.dataQueued ? "" : undefined}
+      onClick={props.onClick}
+    >
+      <Show
+        when={isImage() && props.file.url}
+        fallback={
+          <div data-slot="user-message-attachment-icon">
+            <Icon name="folder" />
+          </div>
+        }
+      >
+        <img
+          data-slot="user-message-attachment-image"
+          src={props.file.url}
+          alt={props.file.filename ?? i18n.t("ui.message.attachment.alt")}
+        />
+      </Show>
+    </div>
+  )
+}
+
+interface FileAttachmentsProps {
+  files: Accessor<FilePart[]>
+  onImageClick?: (file: FilePart) => void
+  dataQueued?: boolean
+}
+
+function FileAttachments(props: FileAttachmentsProps) {
+  return (
+    <Show when={props.files().length > 0}>
+      <div data-slot="user-message-attachments">
+        <For each={props.files()}>
+          {(file) => (
+            <FileAttachmentItem
+              file={file}
+              dataQueued={props.dataQueued}
+              onClick={() => {
+                if (file.mime.startsWith("image/") && file.url) {
+                  props.onImageClick?.(file)
+                }
+              }}
+            />
+          )}
+        </For>
+      </div>
+    </Show>
+  )
+}
 
 function ShellSubmessage(props: { text: string; animate?: boolean }) {
   let widthRef: HTMLSpanElement | undefined
@@ -929,39 +993,11 @@ export function UserMessageDisplay(props: {
 
   return (
     <div data-component="user-message" data-interrupted={props.interrupted ? "" : undefined}>
-      <Show when={attachments().length > 0}>
-        <div data-slot="user-message-attachments">
-          <For each={attachments()}>
-            {(file) => (
-              <div
-                data-slot="user-message-attachment"
-                data-type={file.mime.startsWith("image/") ? "image" : "file"}
-                data-queued={props.queued ? "" : undefined}
-                onClick={() => {
-                  if (file.mime.startsWith("image/") && file.url) {
-                    openImagePreview(file.url, file.filename)
-                  }
-                }}
-              >
-                <Show
-                  when={file.mime.startsWith("image/") && file.url}
-                  fallback={
-                    <div data-slot="user-message-attachment-icon">
-                      <Icon name="folder" />
-                    </div>
-                  }
-                >
-                  <img
-                    data-slot="user-message-attachment-image"
-                    src={file.url}
-                    alt={file.filename ?? i18n.t("ui.message.attachment.alt")}
-                  />
-                </Show>
-              </div>
-            )}
-          </For>
-        </div>
-      </Show>
+      <FileAttachments
+        files={attachments}
+        dataQueued={props.queued}
+        onImageClick={(file) => openImagePreview(file.url, file.filename)}
+      />
       <Show when={text()}>
         <>
           <div data-slot="user-message-body">
@@ -1148,6 +1184,7 @@ function ToolFileAccordion(props: { path: string; actions?: JSX.Element; childre
 
 PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   const i18n = useI18n()
+  const dialog = useDialog()
   const part = () => props.part as ToolPart
   if (part().tool === "todowrite" || part().tool === "todoread") return null
 
@@ -1163,6 +1200,16 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
   const partMetadata = () => part().state?.metadata ?? emptyMetadata
 
   const render = createMemo(() => ToolRegistry.render(part().tool) ?? GenericTool)
+
+  const attachments = createMemo(() => {
+    if (part().state.status !== "completed") return []
+    const state = part().state as { attachments?: FilePart[] }
+    return state.attachments?.filter((a) => a.mime.startsWith("image/")) ?? []
+  })
+
+  const openImagePreview = (url: string, alt?: string) => {
+    dialog.show(() => <ImagePreview src={url} alt={alt} />)
+  }
 
   return (
     <Show when={!hideQuestion()}>
@@ -1213,6 +1260,7 @@ PART_MAPPING["tool"] = function ToolPartDisplay(props) {
               hideDetails={props.hideDetails}
               defaultOpen={props.defaultOpen}
             />
+            <FileAttachments files={attachments} onImageClick={(file) => openImagePreview(file.url, file.filename)} />
           </Match>
         </Switch>
       </div>
