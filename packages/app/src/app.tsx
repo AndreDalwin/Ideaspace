@@ -52,9 +52,11 @@ const SessionRoute = () => (
 )
 
 const ProjectRoute = () => (
-  <Suspense fallback={<Loading />}>
-    <Project />
-  </Suspense>
+  <FileProvider>
+    <Suspense fallback={<Loading />}>
+      <Project />
+    </Suspense>
+  </FileProvider>
 )
 
 const AgentsRoute = () => (
