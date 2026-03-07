@@ -104,7 +104,7 @@ export const SidebarContent = (props: {
               aria-label="Agents"
             />
           </Tooltip>
-          <TooltipKeybind placement={placement()} title={props.settingsLabel()} keybind={props.settingsKeybind() ?? "">
+          <TooltipKeybind placement={placement()} title={props.settingsLabel()} keybind={props.settingsKeybind() ?? ""}>
             <IconButton
               icon="settings-gear"
               variant="ghost"

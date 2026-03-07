@@ -9,6 +9,7 @@ import { ThemeProvider } from "@opencode-ai/ui/theme"
 import { MetaProvider } from "@solidjs/meta"
 import { BaseRouterProps, Navigate, Route, Router } from "@solidjs/router"
 import { Component, ErrorBoundary, type JSX, lazy, type ParentProps, Show, Suspense } from "solid-js"
+import { AgentsProvider } from "@/context/agents"
 import { CommandProvider } from "@/context/command"
 import { CommentsProvider } from "@/context/comments"
 import { FileProvider } from "@/context/file"
@@ -57,9 +58,11 @@ const ProjectRoute = () => (
 )
 
 const AgentsRoute = () => (
-  <Suspense fallback={<Loading />}>
-    <Agents />
-  </Suspense>
+  <AgentsProvider>
+    <Suspense fallback={<Loading />}>
+      <Agents />
+    </Suspense>
+  </AgentsProvider>
 )
 
 const SessionIndexRoute = () => <Navigate href="workspace" />

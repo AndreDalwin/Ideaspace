@@ -1,8 +1,8 @@
 import { createStore } from "solid-js/store"
 import { createEffect, createMemo, onMount } from "solid-js"
 import { createSimpleContext } from "@opencode-ai/ui/context"
-import { useSDK } from "@/context/sdk"
 import { useGlobalSync } from "@/context/global-sync"
+import { useGlobalSDK } from "@/context/global-sdk"
 import type { Agent, AgentConfig, Config } from "@opencode-ai/sdk/v2/client"
 
 interface AgentsState {
@@ -15,7 +15,7 @@ interface AgentsState {
 export const { use: useAgents, provider: AgentsProvider } = createSimpleContext({
   name: "Agents",
   init: () => {
-    const sdk = useSDK()
+    const sdk = useGlobalSDK()
     const globalSync = useGlobalSync()
 
     const [store, setStore] = createStore<AgentsState>({

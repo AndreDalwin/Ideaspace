@@ -2,6 +2,7 @@ import { createMemo, type JSX } from "solid-js"
 import { Select } from "@opencode-ai/ui/select"
 import { useAgents } from "@/context/agents"
 import { useGlobalSync } from "@/context/global-sync"
+import { AgentDetail } from "./detail"
 
 export default function AgentsPage(): JSX.Element {
   const agents = useAgents()
@@ -44,8 +45,8 @@ export default function AgentsPage(): JSX.Element {
           />
         </div>
       </header>
-      <div class="flex-1 rounded-lg border bg-card p-8">
-        <p class="text-muted-foreground">Agents configuration coming soon...</p>
+      <div class="flex h-full flex-1 overflow-hidden rounded-lg border bg-card p-8">
+        <AgentDetail />
       </div>
     </div>
   )

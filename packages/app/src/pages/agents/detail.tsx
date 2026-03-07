@@ -2,8 +2,9 @@ import { Component, createSignal, For, onMount, onCleanup, Show } from "solid-js
 import { createStore } from "solid-js/store"
 import { AgentList } from "./list"
 import { useAgents } from "@/context/agents"
-import { useSDK } from "@/context/sdk"
-import { useSync } from "@/context/sync"
+import { useGlobalSDK } from "@/context/global-sdk"
+import { useGlobalSync } from "@/context/global-sync"
+import { useModels } from "@/context/models"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
 import { Button } from "@opencode-ai/ui/button"
 import { TextField } from "@opencode-ai/ui/text-field"
@@ -12,10 +13,11 @@ import { RadioGroup } from "@opencode-ai/ui/radio-group"
 import { Checkbox } from "@opencode-ai/ui/checkbox"
 import { Icon } from "@opencode-ai/ui/icon"
 import { Dialog } from "@opencode-ai/ui/dialog"
+import { Switch } from "@opencode-ai/ui/switch"
 import { showToast } from "@opencode-ai/ui/toast"
 import { useLanguage } from "@/context/language"
 import { DialogCreateAgent } from "@/components/dialog-create-agent"
-import type { Agent, AgentConfig } from "@opencode-ai/sdk/v2/client"
+import type { Agent, AgentConfig, PermissionConfig, PermissionRuleConfig } from "@opencode-ai/sdk/v2/client"
 
 type PermissionLevel = "allow" | "ask" | "deny"
 
@@ -44,11 +46,41 @@ type MCP = {
   type: "local" | "remote"
 }
 
+type ModelOption = {
+  value: string
+  label: string
+}
+
 const levelOptions: { value: PermissionLevel; label: string }[] = [
   { value: "allow", label: "Allow" },
   { value: "ask", label: "Ask" },
   { value: "deny", label: "Deny" },
 ]
+
+const valid = new Set<PermissionLevel>(["allow", "ask", "deny"])
+
+function level(value: unknown, fallback: PermissionLevel = "ask"): PermissionLevel {
+  if (typeof value === "string" && valid.has(value as PermissionLevel)) return value as PermissionLevel
+  return fallback
+}
+
+function taskState(value: PermissionRuleConfig | undefined) {
+  if (typeof value === "string") return { rule: value as PermissionLevel, item: {} as Record<string, PermissionLevel> }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { rule: "ask" as PermissionLevel, item: {} as Record<string, PermissionLevel> }
+  }
+
+  const rule = level(value["*"])
+  const item = Object.fromEntries(
+    Object.entries(value).flatMap(([key, item]) => {
+      if (key === "*") return []
+      if (typeof item !== "string") return []
+      if (!valid.has(item as PermissionLevel)) return []
+      return [[key, item as PermissionLevel]]
+    }),
+  )
+  return { rule, item }
+}
 
 function PermissionRow(props: {
   label: string
@@ -98,8 +130,9 @@ const modeOptions = [
 
 export const AgentDetail: Component = () => {
   const agents = useAgents()
-  const sdk = useSDK()
-  const sync = useSync()
+  const sdk = useGlobalSDK()
+  const globalSync = useGlobalSync()
+  const models = useModels()
   const lang = useLanguage()
   const dialog = useDialog()
   const [selected, setSelected] = createSignal<string | undefined>(undefined)
@@ -112,6 +145,13 @@ export const AgentDetail: Component = () => {
   const [initialMcps, setInitialMcps] = createSignal<Set<string>>(new Set())
   const [store, setStore] = createStore({
     isEditing: false,
+    model: "",
+    variant: "",
+    temperature: "",
+    steps: "",
+    hidden: false,
+    taskRule: "ask" as PermissionLevel,
+    taskItem: {} as Record<string, PermissionLevel>,
     perms: {
       fileRead: "ask" as PermissionLevel,
       fileEdit: "ask" as PermissionLevel,
@@ -132,6 +172,43 @@ export const AgentDetail: Component = () => {
   })
   const [saving, setSaving] = createSignal(false)
 
+  const modelOptions = () => {
+    const list = models
+      .list()
+      .map((item) => ({
+        value: `${item.provider.id}/${item.id}`,
+        label: `${item.provider.name} / ${item.name}`,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+
+    if (!store.model) return [{ value: "", label: "Use global default model" }, ...list]
+    if (list.some((item) => item.value === store.model))
+      return [{ value: "", label: "Use global default model" }, ...list]
+    return [
+      { value: "", label: "Use global default model" },
+      { value: store.model, label: `${store.model} (configured)` },
+      ...list,
+    ]
+  }
+
+  const selectedModel = () => {
+    if (!store.model) return undefined
+    const [providerID, ...rest] = store.model.split("/")
+    const modelID = rest.join("/")
+    if (!providerID || !modelID) return undefined
+    return models.list().find((item) => item.provider.id === providerID && item.id === modelID)
+  }
+
+  const variantOptions = () => {
+    const item = selectedModel()
+    if (!item?.variants) return [] as ModelOption[]
+    return Object.keys(item.variants)
+      .sort()
+      .map((value) => ({ value, label: value }))
+  }
+
+  const subagents = () => agents.subagents.filter((item) => item.name !== selected())
+
   const agent = () => {
     const name = selected()
     if (!name) return undefined
@@ -141,11 +218,12 @@ export const AgentDetail: Component = () => {
   onMount(async () => {
     const result = await sdk.client.mcp.status()
     if (result.data) {
-      const mcpList: MCP[] = Object.entries(result.data).map(([name, info]: [string, any]) => ({
-        name,
-        status: info.status,
-        type: info.type === "remote" ? "remote" : "local",
-      }))
+      const mcpList: MCP[] = Object.entries(result.data).flatMap(([name, info]) => {
+        if (!info || typeof info !== "object") return []
+        const status = "status" in info && typeof info.status === "string" ? info.status : "unknown"
+        const type = "type" in info && info.type === "remote" ? "remote" : "local"
+        return [{ name, status, type }]
+      })
       setMcps(mcpList)
     }
 
@@ -218,6 +296,7 @@ export const AgentDetail: Component = () => {
     const cfg = agents.getConfig(a.name)
     const perms = cfg?.permission ?? {}
     const permsObj = typeof perms === "object" && perms !== null ? perms : {}
+    const mcp = Array.isArray(cfg?.mcps) ? cfg.mcps.filter((item): item is string => typeof item === "string") : []
 
     setForm({
       name: a.name,
@@ -229,9 +308,9 @@ export const AgentDetail: Component = () => {
 
     setPrompt(cfg?.prompt ?? "")
 
-    const mcps = new Set<string>((a as any).mcps ?? [])
-    setSelectedMcps(mcps)
-    setInitialMcps(new Set(mcps))
+    const next = new Set<string>(mcp)
+    setSelectedMcps(next)
+    setInitialMcps(new Set(next))
 
     const filePerms = permsObj as Record<string, unknown>
 
@@ -437,7 +516,7 @@ export const AgentDetail: Component = () => {
       <div class="flex h-full w-full flex-col border-r border-border-weak-base lg:w-80 xl:w-96">
         <div class="flex items-center justify-between border-b border-border-weak-base px-4 py-3">
           <h2 class="text-16-semibold text-text-strong">Agents</h2>
-          <Button size="small" variant="secondary">
+          <Button size="small" variant="secondary" onClick={handleCreate}>
             <Icon name="plus" size="small" />
             <span class="hidden sm:inline">Create</span>
           </Button>
