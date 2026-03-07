@@ -14,6 +14,7 @@ import { Icon } from "@opencode-ai/ui/icon"
 import { Dialog } from "@opencode-ai/ui/dialog"
 import { showToast } from "@opencode-ai/ui/toast"
 import { useLanguage } from "@/context/language"
+import { DialogCreateAgent } from "@/components/dialog-create-agent"
 import type { Agent, AgentConfig } from "@opencode-ai/sdk/v2/client"
 
 type PermissionLevel = "allow" | "ask" | "deny"
@@ -307,6 +308,20 @@ export const AgentDetail: Component = () => {
     selectedMcps().size !== initialMcps().size ||
     ![...selectedMcps()].every((m) => initialMcps().has(m))
 
+  const handleCreate = () => {
+    dialog.show(() => (
+      <DialogCreateAgent
+        onCreate={(name) => {
+          setSelected(name)
+          agents.reload().then(() => {
+            const a = agents.get(name)
+            if (a) loadAgentData(a)
+          })
+        }}
+      />
+    ))
+  }
+
   const handleDelete = () => {
     const a = agent()
     if (!a || a.native) return
@@ -346,6 +361,53 @@ export const AgentDetail: Component = () => {
               }}
             >
               {deleting() ? "Deleting..." : "Delete"}
+            </Button>
+          </div>
+        }
+      />
+    ))
+  }
+
+  const handleReset = () => {
+    const a = agent()
+    if (!a || !a.native) return
+
+    dialog.show(() => (
+      <Dialog
+        title="Reset to Defaults"
+        description={`Reset "${a.name}" to system defaults? This will remove all custom configuration.`}
+        action={
+          <div class="flex items-center gap-2">
+            <Button size="small" variant="ghost" onClick={() => dialog.close()}>
+              Cancel
+            </Button>
+            <Button
+              size="small"
+              variant="primary"
+              disabled={resetting()}
+              onClick={async () => {
+                setResetting(true)
+                try {
+                  await agents.remove(a.name)
+                  await agents.reload()
+                  const refreshed = agents.get(a.name)
+                  if (refreshed) loadAgentData(refreshed)
+                  dialog.close()
+                  showToast({
+                    title: lang.t("common.success"),
+                    description: "Agent reset to defaults",
+                  })
+                } catch (err) {
+                  showToast({
+                    title: lang.t("common.requestFailed"),
+                    description: err instanceof Error ? err.message : String(err),
+                  })
+                } finally {
+                  setResetting(false)
+                }
+              }}
+            >
+              {resetting() ? "Resetting..." : "Reset"}
             </Button>
           </div>
         }
