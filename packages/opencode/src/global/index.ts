@@ -4,12 +4,18 @@ import path from "path"
 import os from "os"
 import { Filesystem } from "../util/filesystem"
 
-const app = "opencode"
+const app = "ideaspace"
+const legacy = "opencode"
 
 const data = path.join(xdgData!, app)
 const cache = path.join(xdgCache!, app)
 const config = path.join(xdgConfig!, app)
 const state = path.join(xdgState!, app)
+
+const legacyData = path.join(xdgData!, legacy)
+const legacyCache = path.join(xdgCache!, legacy)
+const legacyConfig = path.join(xdgConfig!, legacy)
+const legacyState = path.join(xdgState!, legacy)
 
 export namespace Global {
   export const Path = {
@@ -23,6 +29,15 @@ export namespace Global {
     cache,
     config,
     state,
+  }
+
+  export const LegacyPath = {
+    data: legacyData,
+    bin: path.join(legacyData, "bin"),
+    log: path.join(legacyData, "log"),
+    cache: legacyCache,
+    config: legacyConfig,
+    state: legacyState,
   }
 }
 

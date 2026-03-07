@@ -44,6 +44,7 @@ import { useSessionCommands } from "@/pages/session/use-session-commands"
 import { useSessionHashScroll } from "@/pages/session/use-session-hash-scroll"
 import { same } from "@/utils/same"
 import { formatServerError } from "@/utils/server-errors"
+import { ProjectTabs } from "@/components/project-tabs"
 
 const emptyUserMessages: UserMessage[] = []
 
@@ -1243,6 +1244,7 @@ export default function Page() {
 
   return (
     <div class="relative bg-background-base size-full overflow-hidden flex flex-col">
+      <ProjectTabs />
       <SessionHeader />
       <div class="flex-1 min-h-0 flex flex-col md:flex-row">
         <SessionMobileTabs

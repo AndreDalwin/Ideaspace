@@ -1,3 +1,12 @@
+## Ideaspace Hackathon Direction
+
+- This repo is being reshaped into **Ideaspace**, a desktop-first AI workspace for a hackathon.
+- Current product direction: project tabs for `Workspace`, `Tasks`, `Agents`, `Context`, and `Session` while keeping the existing AI/session flow important.
+- Current implementation focus is limited to `packages/app`, `packages/desktop`, and desktop-supporting runtime/config work in `packages/opencode`.
+- Prefer `.ideaspace` behavior and Ideaspace desktop/runtime branding where practical.
+- Do **not** broaden work into TUI/CLI cleanup or unrelated package renames unless explicitly asked.
+- For this phase, package-level build health is a sufficient verification bar when full repo cleanup is out of scope.
+
 - To regenerate the JavaScript SDK, run `./packages/sdk/js/script/build.ts`.
 - ALWAYS USE PARALLEL TOOLS WHEN APPLICABLE.
 - The default branch in this repo is `dev`.

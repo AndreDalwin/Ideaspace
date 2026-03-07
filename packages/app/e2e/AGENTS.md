@@ -1,5 +1,13 @@
 # E2E Testing Guide
 
+## Ideaspace Hackathon Scope
+
+- The app is currently being reshaped into an Ideaspace desktop-first starter.
+- When adding or updating e2e coverage, prioritize the project shell, project tabs, and session-preserving flows.
+- The important product shape right now is: `Workspace`, `Tasks`, `Agents`, `Context`, and `Session`.
+- Prefer smoke coverage that protects routing, layout shell behavior, and project/session continuity over broad end-to-end expansion.
+- Desktop-first scope still means the backend and session flow remain important; avoid tests that assume chat/session is being removed.
+
 ## Build/Lint/Test Commands
 
 ```bash
@@ -59,7 +67,7 @@ test("test description", async ({ page, sdk, gotoSession }) => {
 ### Using Fixtures
 
 - `page` - Playwright page
-- `sdk` - OpenCode SDK client for API calls
+- `sdk` - SDK client for API calls
 - `gotoSession(sessionID?)` - Navigate to session
 
 ### Helper Functions

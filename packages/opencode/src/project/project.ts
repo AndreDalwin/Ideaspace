@@ -101,9 +101,13 @@ export namespace Project {
         const gitBinary = which("git")
 
         // cached id calculation
-        let id = await Filesystem.readText(path.join(dotgit, "opencode"))
+        let id = await Filesystem.readText(path.join(dotgit, "ideaspace"))
           .then((x) => x.trim())
-          .catch(() => undefined)
+          .catch(() =>
+            Filesystem.readText(path.join(dotgit, "opencode"))
+              .then((x) => x.trim())
+              .catch(() => undefined),
+          )
 
         if (!gitBinary) {
           return {
@@ -139,7 +143,7 @@ export namespace Project {
 
           id = roots[0]
           if (id) {
-            await Filesystem.write(path.join(dotgit, "opencode"), id).catch(() => undefined)
+            await Filesystem.write(path.join(dotgit, "ideaspace"), id).catch(() => undefined)
           }
         }
 

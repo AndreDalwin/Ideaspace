@@ -31,6 +31,7 @@ import { ErrorPage } from "./pages/error"
 import { Dynamic } from "solid-js/web"
 
 const Home = lazy(() => import("@/pages/home"))
+const Project = lazy(() => import("@/pages/project"))
 const Session = lazy(() => import("@/pages/session"))
 const Loading = () => <div class="size-full" />
 
@@ -48,7 +49,13 @@ const SessionRoute = () => (
   </SessionProviders>
 )
 
-const SessionIndexRoute = () => <Navigate href="session" />
+const ProjectRoute = () => (
+  <Suspense fallback={<Loading />}>
+    <Project />
+  </Suspense>
+)
+
+const SessionIndexRoute = () => <Navigate href="workspace" />
 
 function UiI18nBridge(props: ParentProps) {
   const language = useLanguage()
@@ -159,6 +166,10 @@ export function AppInterface(props: {
               <Route path="/" component={HomeRoute} />
               <Route path="/:dir" component={DirectoryLayout}>
                 <Route path="/" component={SessionIndexRoute} />
+                <Route path="/workspace" component={ProjectRoute} />
+                <Route path="/tasks" component={ProjectRoute} />
+                <Route path="/agents" component={ProjectRoute} />
+                <Route path="/context" component={ProjectRoute} />
                 <Route path="/session/:id?" component={SessionRoute} />
               </Route>
             </Dynamic>

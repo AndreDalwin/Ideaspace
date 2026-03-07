@@ -40,7 +40,7 @@ export default function Home() {
   function openProject(directory: string) {
     layout.projects.open(directory)
     server.projects.touch(directory)
-    navigate(`/${base64Encode(directory)}`)
+    navigate(`/${base64Encode(directory)}/workspace`)
   }
 
   async function chooseProject() {

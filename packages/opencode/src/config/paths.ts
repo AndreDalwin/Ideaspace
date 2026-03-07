@@ -20,12 +20,14 @@ export namespace ConfigPaths {
   }
 
   export async function directories(directory: string, worktree: string) {
+    const dirs = [".ideaspace", ".opencode"]
     return [
       Global.Path.config,
+      Global.LegacyPath.config,
       ...(!Flag.OPENCODE_DISABLE_PROJECT_CONFIG
         ? await Array.fromAsync(
             Filesystem.up({
-              targets: [".opencode"],
+              targets: dirs,
               start: directory,
               stop: worktree,
             }),
@@ -33,7 +35,7 @@ export namespace ConfigPaths {
         : []),
       ...(await Array.fromAsync(
         Filesystem.up({
-          targets: [".opencode"],
+          targets: dirs,
           start: Global.Path.home,
           stop: Global.Path.home,
         }),

@@ -46,11 +46,11 @@ export namespace Config {
   function systemManagedConfigDir(): string {
     switch (process.platform) {
       case "darwin":
-        return "/Library/Application Support/opencode"
+        return "/Library/Application Support/ideaspace"
       case "win32":
-        return path.join(process.env.ProgramData || "C:\\ProgramData", "opencode")
+        return path.join(process.env.ProgramData || "C:\\ProgramData", "ideaspace")
       default:
-        return "/etc/opencode"
+        return "/etc/ideaspace"
     }
   }
 
@@ -77,10 +77,10 @@ export namespace Config {
 
     // Config loading order (low -> high precedence): https://opencode.ai/docs/config#precedence-order
     // 1) Remote .well-known/opencode (org defaults)
-    // 2) Global config (~/.config/opencode/opencode.json{,c})
+    // 2) Global config (~/.config/ideaspace/ideaspace.json{,c})
     // 3) Custom config (OPENCODE_CONFIG)
-    // 4) Project config (opencode.json{,c})
-    // 5) .opencode directories (.opencode/agents/, .opencode/commands/, .opencode/plugins/, .opencode/opencode.json{,c})
+    // 4) Project config (ideaspace.json{,c})
+    // 5) .ideaspace directories (.ideaspace/agents/, .ideaspace/commands/, .ideaspace/plugins/, .ideaspace/ideaspace.json{,c})
     // 6) Inline config (OPENCODE_CONFIG_CONTENT)
     // Managed config directory is enterprise-only and always overrides everything above.
     let result: Info = {}
@@ -123,8 +123,10 @@ export namespace Config {
 
     // Project config overrides global and remote config.
     if (!Flag.OPENCODE_DISABLE_PROJECT_CONFIG) {
-      for (const file of await ConfigPaths.projectFiles("opencode", Instance.directory, Instance.worktree)) {
-        result = mergeConfigConcatArrays(result, await loadFile(file))
+      for (const name of ["ideaspace", "opencode"]) {
+        for (const file of await ConfigPaths.projectFiles(name, Instance.directory, Instance.worktree)) {
+          result = mergeConfigConcatArrays(result, await loadFile(file))
+        }
       }
     }
 
@@ -134,7 +136,7 @@ export namespace Config {
 
     const directories = await ConfigPaths.directories(Instance.directory, Instance.worktree)
 
-    // .opencode directory config overrides (project and global) config sources.
+    // .ideaspace directory config overrides (project and global) config sources.
     if (Flag.OPENCODE_CONFIG_DIR) {
       log.debug("loading config from OPENCODE_CONFIG_DIR", { path: Flag.OPENCODE_CONFIG_DIR })
     }
@@ -142,8 +144,8 @@ export namespace Config {
     const deps = []
 
     for (const dir of unique(directories)) {
-      if (dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
-        for (const file of ["opencode.jsonc", "opencode.json"]) {
+      if (dir.endsWith(".ideaspace") || dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
+        for (const file of ["ideaspace.jsonc", "ideaspace.json", "opencode.jsonc", "opencode.json"]) {
           log.debug(`loading config from ${path.join(dir, file)}`)
           result = mergeConfigConcatArrays(result, await loadFile(path.join(dir, file)))
           // to satisfy the type checker
@@ -183,7 +185,7 @@ export namespace Config {
     // which would fail on system directories requiring elevated permissions
     // This way it only loads config file and not skills/plugins/commands
     if (existsSync(managedDir)) {
-      for (const file of ["opencode.jsonc", "opencode.json"]) {
+      for (const file of ["ideaspace.jsonc", "ideaspace.json", "opencode.jsonc", "opencode.json"]) {
         result = mergeConfigConcatArrays(result, await loadFile(path.join(managedDir, file)))
       }
     }

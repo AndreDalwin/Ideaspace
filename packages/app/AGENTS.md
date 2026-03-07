@@ -1,3 +1,12 @@
+## Ideaspace App Direction
+
+- `packages/app` is the shared Ideaspace UI shell for the current hackathon pass.
+- Keep the AI/session experience intact while extending the app into a project-based shell.
+- Current project tabs are `Workspace`, `Tasks`, `Agents`, `Context`, and `Session`.
+- Default project navigation should land on `Workspace` unless a direct session route is required.
+- Prefer starter/scaffold UI that teammates can branch from over overly finished feature work.
+- Do not remove or sideline the session/chat flow when adding project-level surfaces.
+
 ## Debugging
 
 - NEVER try to restart the app, or the server process, EVER.

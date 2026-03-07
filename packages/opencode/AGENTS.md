@@ -1,4 +1,12 @@
-# opencode database guide
+# Ideaspace backend notes
+
+## Ideaspace Runtime Scope
+
+- `packages/opencode` currently supports the Ideaspace desktop starter rather than a full repo-wide rename.
+- Prefer `.ideaspace` and Ideaspace runtime/config behavior where it supports the desktop app.
+- Keep legacy `.opencode` compatibility where the current starter still needs to read existing data.
+- Avoid unrelated TUI/CLI cleanup in this package unless the user explicitly asks for it.
+- For the current hackathon phase, backend/package build success is a sufficient verification bar when wider cleanup is out of scope.
 
 ## Database
 

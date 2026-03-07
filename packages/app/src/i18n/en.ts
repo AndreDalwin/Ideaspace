@@ -498,9 +498,9 @@ export const dict = {
   "notification.session.error.title": "Session error",
   "notification.session.error.fallbackDescription": "An error occurred",
 
-  "home.recentProjects": "Recent projects",
-  "home.empty.title": "No recent projects",
-  "home.empty.description": "Get started by opening a local project",
+  "home.recentProjects": "Projects",
+  "home.empty.title": "No projects yet",
+  "home.empty.description": "Open a local project to start building in Ideaspace",
 
   "session.tab.session": "Session",
   "session.tab.review": "Review",
@@ -610,7 +610,7 @@ export const dict = {
   "sidebar.project.viewAllSessions": "View all sessions",
   "sidebar.project.clearNotifications": "Clear notifications",
 
-  "app.name.desktop": "OpenCode Desktop",
+  "app.name.desktop": "Ideaspace Desktop",
 
   "settings.section.desktop": "Desktop",
   "settings.section.server": "Server",
