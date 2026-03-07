@@ -1,11 +1,14 @@
-import { Component, createSignal, Show, createEffect } from "solid-js"
+import { Component, createSignal, For, onMount, Show } from "solid-js"
 import { createStore } from "solid-js/store"
 import { AgentList } from "./list"
 import { useAgents } from "@/context/agents"
+import { useSDK } from "@/context/sdk"
+import { useSync } from "@/context/sync"
 import { Button } from "@opencode-ai/ui/button"
 import { TextField } from "@opencode-ai/ui/text-field"
 import { Select } from "@opencode-ai/ui/select"
 import { RadioGroup } from "@opencode-ai/ui/radio-group"
+import { Checkbox } from "@opencode-ai/ui/checkbox"
 import { Icon } from "@opencode-ai/ui/icon"
 import type { Agent, AgentConfig } from "@opencode-ai/sdk/v2/client"
 
@@ -28,6 +31,12 @@ interface FormState {
   mode: "primary" | "subagent" | "all"
   nameError: string | undefined
   isEditing: boolean
+}
+
+type MCP = {
+  name: string
+  status: string
+  type: "local" | "remote"
 }
 
 const levelOptions: { value: PermissionLevel; label: string }[] = [
@@ -84,9 +93,13 @@ const modeOptions = [
 
 export const AgentDetail: Component = () => {
   const agents = useAgents()
+  const sdk = useSDK()
+  const sync = useSync()
   const [selected, setSelected] = createSignal<string | undefined>(undefined)
   const [expanded, setExpanded] = createSignal(true)
   const [prompt, setPrompt] = createSignal("")
+  const [mcps, setMcps] = createSignal<MCP[]>([])
+  const [selectedMcps, setSelectedMcps] = createSignal<Set<string>>(new Set())
   const [store, setStore] = createStore({
     isEditing: false,
     perms: {
@@ -114,19 +127,30 @@ export const AgentDetail: Component = () => {
     return agents.get(name)
   }
 
-  createEffect(() => {
-    const a = agent()
-    if (a) {
-      setForm({
-        name: a.name,
-        description: a.description ?? "",
-        mode: a.mode,
-        nameError: undefined,
-        isEditing: false,
-      })
-      setPrompt(a.prompt ?? "")
+  onMount(async () => {
+    const result = await sdk.client.mcp.status()
+    if (result.data) {
+      const mcpList: MCP[] = Object.entries(result.data).map(([name, info]: [string, any]) => ({
+        name,
+        status: info.status,
+        type: info.type === "remote" ? "remote" : "local",
+      }))
+      setMcps(mcpList)
     }
   })
+
+  const toggleMcp = (name: string) => {
+    setSelectedMcps((prev) => {
+      const next = new Set(prev)
+      if (next.has(name)) {
+        next.delete(name)
+      } else {
+        next.add(name)
+      }
+      return next
+    })
+    setStore("isEditing", true)
+  }
 
   const validateName = (name: string, currentName: string): string | undefined => {
     if (!name.trim()) return "Name is required"
@@ -172,6 +196,8 @@ export const AgentDetail: Component = () => {
 
   const handleSelect = (a: Agent) => {
     setSelected(a.name)
+    const mcps = (a as any).mcps
+    setSelectedMcps(new Set<string>(mcps ?? []))
   }
 
   return (
@@ -445,10 +471,48 @@ export const AgentDetail: Component = () => {
                     <h3 class="mb-4 text-14-medium text-text-strong">MCP Servers</h3>
                     <div class="rounded-lg bg-surface-raised-base p-4">
                       <p class="mb-3 text-12-regular text-text-weak">Select which MCP servers this agent can access</p>
-                      <div class="flex items-center gap-2 text-13-regular text-text-weak">
-                        <Icon name="mcp" size="small" />
-                        <span>MCP selection placeholder</span>
-                      </div>
+                      <Show
+                        when={mcps().length > 0}
+                        fallback={
+                          <div class="flex items-center gap-2 text-13-regular text-text-weak">
+                            <Icon name="mcp" size="small" />
+                            <span>No MCP servers available</span>
+                          </div>
+                        }
+                      >
+                        <div class="space-y-2">
+                          <For each={mcps()}>
+                            {(mcp) => (
+                              <div class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-surface-base">
+                                <Checkbox checked={selectedMcps().has(mcp.name)} onChange={() => toggleMcp(mcp.name)} />
+                                <div class="flex flex-1 items-center justify-between">
+                                  <span class="text-13-medium text-text-strong">{mcp.name}</span>
+                                  <div class="flex items-center gap-2">
+                                    <span
+                                      class={
+                                        mcp.type === "local"
+                                          ? "text-11-medium text-text-weak"
+                                          : "text-11-medium text-accent-base"
+                                      }
+                                    >
+                                      {mcp.type}
+                                    </span>
+                                    <span
+                                      class={
+                                        mcp.status === "connected"
+                                          ? "text-11-medium text-success-base"
+                                          : "text-11-medium text-text-weaker"
+                                      }
+                                    >
+                                      {mcp.status}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </For>
+                        </div>
+                      </Show>
                     </div>
                   </section>
                 </div>
