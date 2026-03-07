@@ -1,0 +1,3 @@
+- Added a dedicated `/settings` route tree for global-only MCP config CRUD and skill import/remove instead of extending runtime `/mcp` routes.
+- Mounted `SettingsConfigProvider` inside the app shell so future settings UI can consume aggregated MCP config, MCP runtime state, skill catalog data, and mutation state without changing existing global-sync or agents contexts.
+- Kept skill import/remove on top of `Config.updateGlobal()` and reserved exact-file mutation helpers only for MCP entries, where delete semantics must remove concrete `mcp.<name>` keys from JSONC files.

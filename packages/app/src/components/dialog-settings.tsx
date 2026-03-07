@@ -10,6 +10,36 @@ import { SettingsKeybinds } from "./settings-keybinds"
 import { SettingsProviders } from "./settings-providers"
 import { SettingsModels } from "./settings-models"
 
+const SettingsMcp: Component = () => {
+  const lang = useLanguage()
+  return (
+    <div class="flex flex-col gap-6">
+      <div class="flex items-center justify-between sticky top-0 bg-canvas z-10 pb-4 border-b border-border">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-16-semibold">{lang.t("settings.mcp.title")}</h2>
+          <p class="text-13-regular text-text-secondary">{lang.t("settings.mcp.description")}</p>
+        </div>
+      </div>
+      <div class="text-13-regular text-text-secondary">MCP configuration will be available here.</div>
+    </div>
+  )
+}
+
+const SettingsSkills: Component = () => {
+  const lang = useLanguage()
+  return (
+    <div class="flex flex-col gap-6">
+      <div class="flex items-center justify-between sticky top-0 bg-canvas z-10 pb-4 border-b border-border">
+        <div class="flex flex-col gap-1">
+          <h2 class="text-16-semibold">{lang.t("settings.skills.title")}</h2>
+          <p class="text-13-regular text-text-secondary">{lang.t("settings.skills.description")}</p>
+        </div>
+      </div>
+      <div class="text-13-regular text-text-secondary">Skills configuration will be available here.</div>
+    </div>
+  )
+}
+
 export const DialogSettings: Component = () => {
   const language = useLanguage()
   const platform = usePlatform()
@@ -39,17 +69,26 @@ export const DialogSettings: Component = () => {
                 <div class="flex flex-col gap-1.5">
                   <Tabs.SectionTitle>{language.t("settings.section.server")}</Tabs.SectionTitle>
                   <div class="flex flex-col gap-1.5 w-full">
-                    <Tabs.Trigger value="providers">
+                    <Tabs.Trigger value="providers" data-action="settings-tab-providers">
                       <Icon name="providers" />
                       {language.t("settings.providers.title")}
                     </Tabs.Trigger>
-                    <Tabs.Trigger value="models">
+                    <Tabs.Trigger value="models" data-action="settings-tab-models">
                       <Icon name="models" />
                       {language.t("settings.models.title")}
                     </Tabs.Trigger>
-                    <Tabs.Trigger value="images">
+                    <Tabs.Trigger value="images" data-action="settings-tab-images">
                       <Icon name="photo" />
                       {images()}
+                    </Tabs.Trigger>
+                    <Tabs.Trigger value="mcp" data-action="settings-tab-mcp">
+                      <Icon name="mcp" />
+                      {language.t("settings.mcp.title")}
+                    </Tabs.Trigger>
+
+                    <Tabs.Trigger value="skills" data-action="settings-tab-skills">
+                      <Icon name="brain" />
+                      {language.t("settings.skills.title")}
                     </Tabs.Trigger>
                   </div>
                 </div>
@@ -75,6 +114,12 @@ export const DialogSettings: Component = () => {
         </Tabs.Content>
         <Tabs.Content value="images" class="no-scrollbar">
           <SettingsImages />
+        </Tabs.Content>
+        <Tabs.Content value="mcp" class="no-scrollbar">
+          <SettingsMcp />
+        </Tabs.Content>
+        <Tabs.Content value="skills" class="no-scrollbar">
+          <SettingsSkills />
         </Tabs.Content>
       </Tabs>
     </Dialog>

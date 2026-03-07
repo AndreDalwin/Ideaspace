@@ -747,6 +747,8 @@ export const dict = {
   "settings.commands.description": "Настройки команд будут доступны здесь.",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "Настройки MCP будут доступны здесь.",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
 
   "settings.permissions.title": "Разрешения",
   "settings.permissions.description": "Контролируйте какие инструменты сервер может использовать по умолчанию.",

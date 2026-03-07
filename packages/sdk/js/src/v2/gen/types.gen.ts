@@ -1774,6 +1774,19 @@ export type ProviderAuthAuthorization = {
   instructions: string
 }
 
+export type SettingsMcpList = {
+  [key: string]:
+    | McpLocalConfig
+    | McpRemoteConfig
+    | {
+        enabled: boolean
+      }
+}
+
+export type SettingsSkillUrl = {
+  url: string
+}
+
 export type Symbol = {
   name: string
   kind: number
@@ -4102,6 +4115,175 @@ export type ProviderOauthCallbackResponses = {
 }
 
 export type ProviderOauthCallbackResponse = ProviderOauthCallbackResponses[keyof ProviderOauthCallbackResponses]
+
+export type SettingsMcpListData = {
+  body?: never
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/settings/mcp"
+}
+
+export type SettingsMcpListResponses = {
+  /**
+   * Global MCP configuration
+   */
+  200: SettingsMcpList
+}
+
+export type SettingsMcpListResponse = SettingsMcpListResponses[keyof SettingsMcpListResponses]
+
+export type SettingsMcpCreateData = {
+  body?: {
+    name: string
+    config: McpLocalConfig | McpRemoteConfig
+  }
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/settings/mcp"
+}
+
+export type SettingsMcpCreateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type SettingsMcpCreateError = SettingsMcpCreateErrors[keyof SettingsMcpCreateErrors]
+
+export type SettingsMcpCreateResponses = {
+  /**
+   * Global MCP configuration
+   */
+  200: SettingsMcpList
+}
+
+export type SettingsMcpCreateResponse = SettingsMcpCreateResponses[keyof SettingsMcpCreateResponses]
+
+export type SettingsMcpDeleteData = {
+  body?: never
+  path: {
+    name: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/settings/mcp/{name}"
+}
+
+export type SettingsMcpDeleteResponses = {
+  /**
+   * Global MCP configuration
+   */
+  200: SettingsMcpList
+}
+
+export type SettingsMcpDeleteResponse = SettingsMcpDeleteResponses[keyof SettingsMcpDeleteResponses]
+
+export type SettingsMcpUpdateData = {
+  body?: {
+    config: McpLocalConfig | McpRemoteConfig
+  }
+  path: {
+    name: string
+  }
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/settings/mcp/{name}"
+}
+
+export type SettingsMcpUpdateErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type SettingsMcpUpdateError = SettingsMcpUpdateErrors[keyof SettingsMcpUpdateErrors]
+
+export type SettingsMcpUpdateResponses = {
+  /**
+   * Global MCP configuration
+   */
+  200: SettingsMcpList
+}
+
+export type SettingsMcpUpdateResponse = SettingsMcpUpdateResponses[keyof SettingsMcpUpdateResponses]
+
+export type SettingsSkillImportData = {
+  body?: SettingsSkillUrl
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/settings/skill/import"
+}
+
+export type SettingsSkillImportErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type SettingsSkillImportError = SettingsSkillImportErrors[keyof SettingsSkillImportErrors]
+
+export type SettingsSkillImportResponses = {
+  /**
+   * Skill catalog
+   */
+  200: Array<{
+    name: string
+    description: string
+    location: string
+    content: string
+  }>
+}
+
+export type SettingsSkillImportResponse = SettingsSkillImportResponses[keyof SettingsSkillImportResponses]
+
+export type SettingsSkillRemoveData = {
+  body?: SettingsSkillUrl
+  path?: never
+  query?: {
+    directory?: string
+    workspace?: string
+  }
+  url: "/settings/skill/remove"
+}
+
+export type SettingsSkillRemoveErrors = {
+  /**
+   * Bad request
+   */
+  400: BadRequestError
+}
+
+export type SettingsSkillRemoveError = SettingsSkillRemoveErrors[keyof SettingsSkillRemoveErrors]
+
+export type SettingsSkillRemoveResponses = {
+  /**
+   * Skill catalog
+   */
+  200: Array<{
+    name: string
+    description: string
+    location: string
+    content: string
+  }>
+}
+
+export type SettingsSkillRemoveResponse = SettingsSkillRemoveResponses[keyof SettingsSkillRemoveResponses]
 
 export type FindTextData = {
   body?: never

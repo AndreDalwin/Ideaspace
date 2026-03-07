@@ -670,6 +670,8 @@ export const dict = {
   "settings.commands.description": "コマンド設定はここで構成できます。",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "MCP設定はここで構成できます。",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
   "settings.permissions.title": "権限",
   "settings.permissions.description": "サーバーがデフォルトで使用できるツールを制御します。",
   "settings.permissions.section.tools": "ツール",

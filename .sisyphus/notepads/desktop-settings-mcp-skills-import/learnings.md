@@ -1,0 +1,3 @@
+- Settings-side MCP deletes should avoid `Config.getGlobal()` immediately after write because config loading may inject `$schema` and rewrite JSONC, which hides whether comment-preserving edits actually held.
+- `jsonc-parser` `modify(..., undefined)` is fine for simple deletes, but preserving sibling comments around `mcp.<name>` removals benefits from a targeted range delete using `parseTree`/`findNodeAtLocation`.
+- Generated SDK methods for nested `settings.skill.*` routes map the JSON body to `settingsSkillUrl`, so Solid controllers should pass `{ settingsSkillUrl: { url } }`.

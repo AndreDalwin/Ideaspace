@@ -738,6 +738,8 @@ export const dict = {
   "settings.commands.description": "การตั้งค่าคำสั่งจะสามารถกำหนดค่าได้ที่นี่",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "การตั้งค่า MCP จะสามารถกำหนดค่าได้ที่นี่",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
 
   "settings.permissions.title": "สิทธิ์",
   "settings.permissions.description": "ควบคุมเครื่องมือที่เซิร์ฟเวอร์สามารถใช้โดยค่าเริ่มต้น",

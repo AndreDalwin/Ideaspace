@@ -731,6 +731,8 @@ export const dict = {
   "settings.commands.description": "命令設定將在此處可設定。",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "MCP 設定將在此處可設定。",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
 
   "settings.permissions.title": "權限",
   "settings.permissions.description": "控制伺服器預設可以使用哪些工具。",

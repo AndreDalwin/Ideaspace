@@ -745,6 +745,8 @@ export const dict = {
   "settings.commands.description": "Postavke komandi će se ovdje moći podešavati.",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "MCP postavke će se ovdje moći podešavati.",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
 
   "settings.permissions.title": "Dozvole",
   "settings.permissions.description": "Kontroliši koje alate server smije koristiti po defaultu.",

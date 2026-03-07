@@ -778,7 +778,9 @@ export const dict = {
   "settings.commands.title": "Commands",
   "settings.commands.description": "Command settings will be configurable here.",
   "settings.mcp.title": "MCP",
-  "settings.mcp.description": "MCP settings will be configurable here.",
+  "settings.mcp.description": "Manage Model Context Protocol servers and tools.",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
 
   "settings.permissions.title": "Permissions",
   "settings.permissions.description": "Control what tools the server can use by default.",

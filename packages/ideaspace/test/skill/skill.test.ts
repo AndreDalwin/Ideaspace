@@ -1,4 +1,6 @@
-import { test, expect } from "bun:test"
+import { afterEach, expect, test } from "bun:test"
+import { Global } from "../../src/global"
+import { Settings } from "../../src/settings"
 import { Skill } from "../../src/skill"
 import { Instance } from "../../src/project/instance"
 import { tmpdir } from "../fixture/fixture"
@@ -21,6 +23,13 @@ This skill is loaded from the global home directory.
 `,
   )
 }
+
+afterEach(async () => {
+  await fs.rm(path.join(Global.Path.config, "skills"), {
+    recursive: true,
+    force: true,
+  })
+})
 
 test("discovers skills from .opencode/skill/ directory", async () => {
   await using tmp = await tmpdir({
@@ -216,6 +225,44 @@ test("returns empty array when no skills exist", async () => {
     fn: async () => {
       const skills = await Skill.all()
       expect(skills).toEqual([])
+    },
+  })
+})
+
+test("imports a managed skill from SKILL.md and copies sibling files", async () => {
+  await using tmp = await tmpdir({
+    git: true,
+    init: async (dir) => {
+      const skill = path.join(dir, "fixtures", "example-skill")
+      await Bun.write(
+        path.join(skill, "SKILL.md"),
+        `---
+name: Example Skill
+description: Imported from a markdown file path.
+---
+
+# Example Skill
+`,
+      )
+      await Bun.write(path.join(skill, "reference", "guide.md"), "# guide")
+      await Bun.write(path.join(skill, "scripts", "run.sh"), "#!/bin/sh\necho hi\n")
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const list = await Settings.importSkillDirectory(path.join(tmp.path, "fixtures", "example-skill", "SKILL.md"))
+      const target = path.join(Global.Path.config, "skills", "example-skill")
+      const skill = list.find((item) => item.name === "Example Skill")
+
+      expect(skill).toBeDefined()
+      expect(skill?.location).toBe(path.join(target, "SKILL.md"))
+      expect(await fs.readFile(path.join(target, "reference", "guide.md"), "utf8")).toBe("# guide")
+      expect(await fs.readFile(path.join(target, "scripts", "run.sh"), "utf8")).toContain("echo hi")
+      expect((await Skill.all()).find((item) => item.name === "Example Skill")?.location).toBe(
+        path.join(target, "SKILL.md"),
+      )
     },
   })
 })

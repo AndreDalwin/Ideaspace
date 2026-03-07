@@ -759,6 +759,8 @@ export const dict = {
   "settings.commands.description": "Komut ayarları burada yapılandırılabilecek.",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "MCP ayarları burada yapılandırılabilecek.",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
 
   "settings.permissions.title": "İzinler",
   "settings.permissions.description": "Sunucunun varsayılan olarak hangi araçları kullanabileceğini kontrol edin.",
