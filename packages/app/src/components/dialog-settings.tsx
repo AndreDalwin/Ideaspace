@@ -16,7 +16,7 @@ export const DialogSettings: Component = () => {
   const images = () => language.t("settings.images.title") || "Images"
 
   return (
-    <Dialog size="x-large" transition>
+    <Dialog size="x-large" transition class="h-full overflow-hidden">
       <Tabs orientation="vertical" variant="settings" defaultValue="general" class="h-full settings-dialog">
         <Tabs.List>
           <div class="flex flex-col justify-between h-full w-full">

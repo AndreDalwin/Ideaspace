@@ -223,7 +223,7 @@ export const SettingsImages: Component = () => {
         </div>
       </div>
 
-      <div class="flex flex-col gap-8 max-w-[720px] w-full">
+      <div class="flex min-h-[320px] flex-1 flex-col gap-8 max-w-[720px] w-full">
         <Show
           when={!list.grouped.loading}
           fallback={
