@@ -26,6 +26,7 @@ export const dict = {
   "command.provider.connect": "Connect provider",
   "command.server.switch": "Switch server",
   "command.settings.open": "Open settings",
+  "command.agents.open": "Open agents",
   "command.session.previous": "Previous session",
   "command.session.next": "Next session",
   "command.session.previous.unseen": "Previous unread session",
@@ -599,6 +600,7 @@ export const dict = {
 
   "sidebar.menu.toggle": "Toggle menu",
   "sidebar.nav.projectsAndSessions": "Projects and sessions",
+  "sidebar.agents": "Agents",
   "sidebar.settings": "Settings",
   "sidebar.help": "Help",
   "sidebar.workspaces.enable": "Enable workspaces",

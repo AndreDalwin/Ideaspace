@@ -9,7 +9,7 @@ import { ThemeProvider } from "@opencode-ai/ui/theme"
 import { MetaProvider } from "@solidjs/meta"
 import { BaseRouterProps, Navigate, Route, Router } from "@solidjs/router"
 import { Component, ErrorBoundary, type JSX, lazy, type ParentProps, Show, Suspense } from "solid-js"
-import { AgentsProvider } from "@/context/agents"
+
 import { CommandProvider } from "@/context/command"
 import { CommentsProvider } from "@/context/comments"
 import { FileProvider } from "@/context/file"
@@ -34,7 +34,6 @@ import { Dynamic } from "solid-js/web"
 const Home = lazy(() => import("@/pages/home"))
 const Project = lazy(() => import("@/pages/project"))
 const Session = lazy(() => import("@/pages/session"))
-const Agents = lazy(() => import("@/pages/agents"))
 const Loading = () => <div class="size-full" />
 
 const HomeRoute = () => (
@@ -55,14 +54,6 @@ const ProjectRoute = () => (
   <Suspense fallback={<Loading />}>
     <Project />
   </Suspense>
-)
-
-const AgentsRoute = () => (
-  <AgentsProvider>
-    <Suspense fallback={<Loading />}>
-      <Agents />
-    </Suspense>
-  </AgentsProvider>
 )
 
 const SessionIndexRoute = () => <Navigate href="workspace" />
@@ -176,7 +167,6 @@ export function AppInterface(props: {
               root={(routerProps) => <RouterRoot appChildren={props.children}>{routerProps.children}</RouterRoot>}
             >
               <Route path="/" component={HomeRoute} />
-              <Route path="/agents" component={AgentsRoute} />
               <Route path="/:dir" component={DirectoryLayout}>
                 <Route path="/" component={SessionIndexRoute} />
                 <Route path="/workspace" component={ProjectRoute} />
