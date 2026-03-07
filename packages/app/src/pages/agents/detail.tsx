@@ -10,6 +10,8 @@ import { Select } from "@opencode-ai/ui/select"
 import { RadioGroup } from "@opencode-ai/ui/radio-group"
 import { Checkbox } from "@opencode-ai/ui/checkbox"
 import { Icon } from "@opencode-ai/ui/icon"
+import { showToast } from "@opencode-ai/ui/toast"
+import { useLanguage } from "@/context/language"
 import type { Agent, AgentConfig } from "@opencode-ai/sdk/v2/client"
 
 type PermissionLevel = "allow" | "ask" | "deny"
@@ -95,11 +97,13 @@ export const AgentDetail: Component = () => {
   const agents = useAgents()
   const sdk = useSDK()
   const sync = useSync()
+  const lang = useLanguage()
   const [selected, setSelected] = createSignal<string | undefined>(undefined)
   const [expanded, setExpanded] = createSignal(true)
   const [prompt, setPrompt] = createSignal("")
   const [mcps, setMcps] = createSignal<MCP[]>([])
   const [selectedMcps, setSelectedMcps] = createSignal<Set<string>>(new Set())
+  const [initialMcps, setInitialMcps] = createSignal<Set<string>>(new Set())
   const [store, setStore] = createStore({
     isEditing: false,
     perms: {
@@ -120,6 +124,7 @@ export const AgentDetail: Component = () => {
     nameError: undefined,
     isEditing: false,
   })
+  const [saving, setSaving] = createSignal(false)
 
   const agent = () => {
     const name = selected()
@@ -194,11 +199,108 @@ export const AgentDetail: Component = () => {
     void agents.update(a.name, config)
   }
 
+  const loadAgentData = (a: Agent) => {
+    const cfg = agents.getConfig(a.name)
+    const perms = cfg?.permission ?? {}
+    const permsObj = typeof perms === "object" && perms !== null ? perms : {}
+
+    setForm({
+      name: a.name,
+      description: a.description ?? "",
+      mode: a.mode ?? "primary",
+      nameError: undefined,
+      isEditing: false,
+    })
+
+    setPrompt(cfg?.prompt ?? "")
+
+    const mcps = new Set<string>((a as any).mcps ?? [])
+    setSelectedMcps(mcps)
+    setInitialMcps(new Set(mcps))
+
+    const filePerms = permsObj as Record<string, unknown>
+
+    setStore("perms", {
+      fileRead: (filePerms.read as PermissionLevel) ?? "ask",
+      fileEdit: (filePerms.edit as PermissionLevel) ?? "ask",
+      filePaths: ((filePerms.filePaths as string[]) ?? []).join("\n"),
+      webfetch: (filePerms.webfetch as PermissionLevel) ?? "ask",
+      websearch: (filePerms.websearch as PermissionLevel) ?? "ask",
+      bash: (filePerms.bash as PermissionLevel) ?? "ask",
+      bashPaths: ((filePerms.bashPaths as string[]) ?? []).join("\n"),
+      other: (filePerms.other as PermissionLevel) ?? "ask",
+    })
+    setStore("isEditing", false)
+  }
+
   const handleSelect = (a: Agent) => {
     setSelected(a.name)
-    const mcps = (a as any).mcps
-    setSelectedMcps(new Set<string>(mcps ?? []))
+    loadAgentData(a)
   }
+
+  const handleSave = async () => {
+    const a = agent()
+    if (!a) return
+
+    if (form.nameError) {
+      showToast({
+        title: lang.t("common.requestFailed"),
+        description: form.nameError,
+      })
+      return
+    }
+
+    setSaving(true)
+
+    try {
+      const cfg: Partial<AgentConfig> = {
+        description: form.description,
+        mode: form.mode,
+        prompt: prompt(),
+        mcps: Array.from(selectedMcps()),
+        permission: {
+          read: store.perms.fileRead,
+          edit: store.perms.fileEdit,
+          bash: store.perms.bash,
+          webfetch: store.perms.webfetch,
+          websearch: store.perms.websearch,
+          other: store.perms.other,
+          filePaths: store.perms.filePaths
+            .split("\n")
+            .map((p) => p.trim())
+            .filter((p) => p.length > 0),
+          bashPaths: store.perms.bashPaths
+            .split("\n")
+            .map((p) => p.trim())
+            .filter((p) => p.length > 0),
+        },
+      }
+
+      await agents.update(a.name, cfg)
+
+      setForm("isEditing", false)
+      setStore("isEditing", false)
+      setInitialMcps(new Set(selectedMcps()))
+
+      showToast({
+        title: lang.t("common.save"),
+        description: "Agent saved successfully",
+      })
+    } catch (err) {
+      showToast({
+        title: lang.t("common.requestFailed"),
+        description: err instanceof Error ? err.message : String(err),
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const isDirty = () =>
+    form.isEditing ||
+    store.isEditing ||
+    selectedMcps().size !== initialMcps().size ||
+    ![...selectedMcps()].every((m) => initialMcps().has(m))
 
   return (
     <div class="flex h-full w-full flex-col lg:flex-row">
@@ -259,7 +361,7 @@ export const AgentDetail: Component = () => {
                       Delete
                     </Button>
                   </Show>
-                  <Button size="small" variant="primary" disabled={!form.isEditing && !store.isEditing}>
+                  <Button size="small" variant="primary" disabled={!isDirty() || saving()} onClick={handleSave}>
                     <Icon name="check" size="small" />
                     Save
                   </Button>
@@ -380,19 +482,28 @@ export const AgentDetail: Component = () => {
                             label="Read files"
                             desc="Access file contents for reading"
                             level={store.perms.fileRead}
-                            onChange={(v) => setStore("perms", "fileRead", v)}
+                            onChange={(v) => {
+                              setStore("perms", "fileRead", v)
+                              setStore("isEditing", true)
+                            }}
                           />
                           <PermissionRow
                             label="Edit files"
                             desc="Modify and write file contents"
                             level={store.perms.fileEdit}
-                            onChange={(v) => setStore("perms", "fileEdit", v)}
+                            onChange={(v) => {
+                              setStore("perms", "fileEdit", v)
+                              setStore("isEditing", true)
+                            }}
                           >
                             <TextField
                               label="Allowed paths"
                               multiline
                               value={store.perms.filePaths}
-                              onChange={(v) => setStore("perms", "filePaths", v)}
+                              onChange={(v) => {
+                                setStore("perms", "filePaths", v)
+                                setStore("isEditing", true)
+                              }}
                               placeholder="One path pattern per line...&#10;*&#10;src/**/*&#10;!*.secret"
                               description="Glob patterns for allowed file paths"
                               class="min-h-[80px]"
@@ -412,13 +523,19 @@ export const AgentDetail: Component = () => {
                             label="Web fetch"
                             desc="Make HTTP requests to external APIs"
                             level={store.perms.webfetch}
-                            onChange={(v) => setStore("perms", "webfetch", v)}
+                            onChange={(v) => {
+                              setStore("perms", "webfetch", v)
+                              setStore("isEditing", true)
+                            }}
                           />
                           <PermissionRow
                             label="Web search"
                             desc="Search the internet for information"
                             level={store.perms.websearch}
-                            onChange={(v) => setStore("perms", "websearch", v)}
+                            onChange={(v) => {
+                              setStore("perms", "websearch", v)
+                              setStore("isEditing", true)
+                            }}
                           />
                         </div>
                       </div>
@@ -434,13 +551,19 @@ export const AgentDetail: Component = () => {
                             label="Bash execution"
                             desc="Run shell commands and scripts"
                             level={store.perms.bash}
-                            onChange={(v) => setStore("perms", "bash", v)}
+                            onChange={(v) => {
+                              setStore("perms", "bash", v)
+                              setStore("isEditing", true)
+                            }}
                           >
                             <TextField
                               label="Allowed paths"
                               multiline
                               value={store.perms.bashPaths}
-                              onChange={(v) => setStore("perms", "bashPaths", v)}
+                              onChange={(v) => {
+                                setStore("perms", "bashPaths", v)
+                                setStore("isEditing", true)
+                              }}
                               placeholder="One working directory per line...&#10;/project&#10;/tmp"
                               description="Directories where bash commands can be executed"
                               class="min-h-[80px]"
@@ -459,7 +582,10 @@ export const AgentDetail: Component = () => {
                             label="Other permissions"
                             desc="Access to additional tools and APIs"
                             level={store.perms.other}
-                            onChange={(v) => setStore("perms", "other", v)}
+                            onChange={(v) => {
+                              setStore("perms", "other", v)
+                              setStore("isEditing", true)
+                            }}
                           />
                         </div>
                       </div>
