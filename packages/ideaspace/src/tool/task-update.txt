@@ -1,0 +1,14 @@
+Update the status of a task in the Kanban board.
+
+Moves a task between columns (backlog, progress, review, done) to reflect current state.
+
+Use when:
+- Task is completed → move to "done" or "review"
+- Work started → move to "progress"
+- User asks to "mark as done" or "move to review"
+
+Parameters:
+- taskId: Task unique ID
+- status: New status (backlog, progress, review, done)
+
+Note: Blocked tasks (with unresolved deps) can't leave backlog.
