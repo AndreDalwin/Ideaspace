@@ -916,7 +916,7 @@ export default function Layout(props: ParentProps) {
       if (nextSession) {
         navigate(`/${params.dir}/session/${nextSession.id}`)
       } else {
-        navigate(`/${params.dir}/workspace`)
+        navigate(`/${params.dir}/plan`)
       }
     }
   }
@@ -1246,7 +1246,7 @@ export default function Layout(props: ParentProps) {
       return
     }
 
-    navigateWithSidebarReset(`/${base64Encode(root)}/workspace`)
+    navigateWithSidebarReset(`/${base64Encode(root)}/plan`)
   }
 
   function navigateToSession(session: Session | undefined) {
@@ -1327,7 +1327,7 @@ export default function Layout(props: ParentProps) {
       return
     }
 
-    navigateWithSidebarReset(`/${base64Encode(next.worktree)}/workspace`)
+    navigateWithSidebarReset(`/${base64Encode(next.worktree)}/plan`)
     layout.projects.close(directory)
     queueMicrotask(() => {
       void navigateToProject(next.worktree)
@@ -1380,7 +1380,7 @@ export default function Layout(props: ParentProps) {
     const deletedKey = workspaceKey(directory)
     const shouldLeave = leaveDeletedWorkspace || (!!params.dir && currentKey === deletedKey)
     if (!leaveDeletedWorkspace && shouldLeave) {
-      navigateWithSidebarReset(`/${base64Encode(root)}/workspace`)
+      navigateWithSidebarReset(`/${base64Encode(root)}/plan`)
     }
 
     setBusy(directory, true)
@@ -1428,7 +1428,7 @@ export default function Layout(props: ParentProps) {
     const valid = dirs.some((item) => workspaceKey(item) === nextKey)
 
     if (params.dir && projectRoot(nextCurrent) === root && !valid) {
-      navigateWithSidebarReset(`/${base64Encode(root)}/workspace`)
+      navigateWithSidebarReset(`/${base64Encode(root)}/plan`)
     }
   }
 
@@ -1533,7 +1533,7 @@ export default function Layout(props: ParentProps) {
     const handleDelete = () => {
       const leaveDeletedWorkspace = !!params.dir && workspaceKey(currentDir()) === workspaceKey(props.directory)
       if (leaveDeletedWorkspace) {
-        navigateWithSidebarReset(`/${base64Encode(props.root)}/workspace`)
+        navigateWithSidebarReset(`/${base64Encode(props.root)}/plan`)
       }
       dialog.close()
       void deleteWorkspace(props.root, props.directory, leaveDeletedWorkspace)
@@ -2027,7 +2027,7 @@ export default function Layout(props: ParentProps) {
                           size="large"
                           icon="plus-small"
                           class="w-full"
-                          onClick={() => navigateWithSidebarReset(`/${base64Encode(p().worktree)}/workspace`)}
+                          onClick={() => navigateWithSidebarReset(`/${base64Encode(p().worktree)}/plan`)}
                         >
                           {language.t("command.session.new")}
                         </Button>

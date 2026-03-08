@@ -2,10 +2,8 @@ import { A, useLocation, useParams } from "@solidjs/router"
 import { For } from "solid-js"
 
 const tabs = [
-  { id: "workspace", label: "Workspace" },
-  { id: "tasks", label: "Tasks" },
-  { id: "agents", label: "Agents" },
-  { id: "context", label: "Context" },
+  { id: "plan", label: "Plan" },
+  { id: "kanban", label: "Kanban" },
   { id: "session", label: "Session" },
 ] as const
 
@@ -19,12 +17,13 @@ export function ProjectTabs() {
       return `/${params.dir}/session`
     }
 
+    if (params.id) return `/${params.dir}/${id}/${params.id}`
     return `/${params.dir}/${id}`
   }
 
   const active = (id: (typeof tabs)[number]["id"]) => {
     if (id === "session") return location.pathname.startsWith(`/${params.dir}/session`)
-    return location.pathname === href(id)
+    return location.pathname.startsWith(`/${params.dir}/${id}`)
   }
 
   return (
