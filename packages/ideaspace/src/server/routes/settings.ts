@@ -136,7 +136,7 @@ export const SettingsRoutes = lazy(() =>
       validator("json", Settings.SkillImport),
       async (c) => {
         const body = c.req.valid("json")
-        return c.json(await Settings.importSkillDirectory(body.source, body.replace))
+        return c.json(await Settings.importSkillDirectory(body.url, body.replace))
       },
     )
     .post(
@@ -160,7 +160,7 @@ export const SettingsRoutes = lazy(() =>
       validator("json", Settings.SkillRemove),
       async (c) => {
         const body = c.req.valid("json")
-        return c.json(await Settings.removeManagedSkill(body.location))
+        return c.json(await Settings.removeManagedSkill(body.url))
       },
     ),
 )

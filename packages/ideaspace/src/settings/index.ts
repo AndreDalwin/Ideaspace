@@ -27,7 +27,7 @@ export namespace Settings {
 
   export const SkillImport = z
     .object({
-      source: z.string(),
+      url: z.string(),
       replace: z.boolean().optional().default(false),
     })
     .meta({
@@ -36,7 +36,7 @@ export namespace Settings {
 
   export const SkillRemove = z
     .object({
-      location: z.string(),
+      url: z.string(),
     })
     .meta({
       ref: "SettingsSkillRemove",
