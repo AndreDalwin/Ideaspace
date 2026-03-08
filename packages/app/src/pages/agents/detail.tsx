@@ -171,8 +171,10 @@ export const AgentDetail: Component = () => {
     hidden: false,
     mcpRule: "allow" as PermissionLevel,
     mcpItem: {} as Record<string, PermissionLevel>,
+    mcpExtra: [] as string[],
     skillRule: "allow" as PermissionLevel,
     skillItem: {} as Record<string, PermissionLevel>,
+    skillExtra: [] as string[],
     taskRule: "deny" as PermissionLevel,
     taskItem: {} as Record<string, PermissionLevel>,
     perms: {
@@ -206,8 +208,10 @@ export const AgentDetail: Component = () => {
     hidden: false,
     mcpRule: "allow" as PermissionLevel,
     mcpItem: {} as Record<string, PermissionLevel>,
+    mcpExtra: [] as string[],
     skillRule: "allow" as PermissionLevel,
     skillItem: {} as Record<string, PermissionLevel>,
+    skillExtra: [] as string[],
     taskRule: "deny" as PermissionLevel,
     taskItem: {} as Record<string, PermissionLevel>,
     perms: {
@@ -334,19 +338,23 @@ export const AgentDetail: Component = () => {
     const picked = Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : undefined
     if (!picked) {
       const rule: PermissionLevel = mode === "subagent" ? "deny" : "allow"
-      return { rule, item: {} as Record<string, PermissionLevel> }
+      return { rule, item: {} as Record<string, PermissionLevel>, extra: [] as string[] }
     }
 
-    if (picked.length === 0) return { rule: "deny" as PermissionLevel, item: {} as Record<string, PermissionLevel> }
-    if (picked.length === all.length)
-      return { rule: "allow" as PermissionLevel, item: {} as Record<string, PermissionLevel> }
+    const extra = picked.filter((item) => !all.includes(item))
+    const known = picked.filter((item) => all.includes(item))
 
-    const denied = all.length - picked.length
-    if (denied <= picked.length) {
-      return { rule: "allow" as PermissionLevel, item: overrides(all, picked, "allow") }
+    if (known.length === 0)
+      return { rule: "deny" as PermissionLevel, item: {} as Record<string, PermissionLevel>, extra }
+    if (known.length === all.length)
+      return { rule: "allow" as PermissionLevel, item: {} as Record<string, PermissionLevel>, extra }
+
+    const denied = all.length - known.length
+    if (denied <= known.length) {
+      return { rule: "allow" as PermissionLevel, item: overrides(all, known, "allow"), extra }
     }
 
-    return { rule: "deny" as PermissionLevel, item: overrides(all, picked, "deny") }
+    return { rule: "deny" as PermissionLevel, item: overrides(all, known, "deny"), extra }
   }
 
   const picked = (all: string[], rule: PermissionLevel, item: Record<string, PermissionLevel>) => {
@@ -456,8 +464,10 @@ export const AgentDetail: Component = () => {
         return {
           mcpRule: mcp.rule,
           mcpItem: mcp.item,
+          mcpExtra: mcp.extra,
           skillRule: skill.rule,
           skillItem: skill.item,
+          skillExtra: skill.extra,
         }
       })(),
       taskRule: task.rule,
@@ -491,8 +501,10 @@ export const AgentDetail: Component = () => {
     setStore("hidden", next.hidden)
     setStore("mcpRule", next.mcpRule)
     setStore("mcpItem", next.mcpItem)
+    setStore("mcpExtra", next.mcpExtra)
     setStore("skillRule", next.skillRule)
     setStore("skillItem", next.skillItem)
+    setStore("skillExtra", next.skillExtra)
     setStore("taskRule", next.taskRule)
     setStore("taskItem", next.taskItem)
 
@@ -607,17 +619,33 @@ export const AgentDetail: Component = () => {
       const current = globalSync.data.config.agent?.[a.name] ?? {}
 
       if (store.mcpRule !== base.mcpRule || !sameMap(store.mcpItem, base.mcpItem) || form.mode !== base.mode) {
-        const list = picked(allowedMcps(), store.mcpRule, store.mcpItem)
+        const list = [
+          ...new Set([
+            ...picked(allowedMcps(), store.mcpRule, store.mcpItem),
+            ...(store.mcpRule === "allow" ? store.mcpExtra : []),
+          ]),
+        ]
         cfg.mcps =
-          form.mode !== "subagent" && store.mcpRule === "allow" && Object.keys(store.mcpItem).length === 0
+          form.mode !== "subagent" &&
+          store.mcpRule === "allow" &&
+          Object.keys(store.mcpItem).length === 0 &&
+          store.mcpExtra.length === 0
             ? undefined
             : list
       }
 
       if (store.skillRule !== base.skillRule || !sameMap(store.skillItem, base.skillItem) || form.mode !== base.mode) {
-        const list = picked(allowedSkills(), store.skillRule, store.skillItem)
+        const list = [
+          ...new Set([
+            ...picked(allowedSkills(), store.skillRule, store.skillItem),
+            ...(store.skillRule === "allow" ? store.skillExtra : []),
+          ]),
+        ]
         cfg.skills =
-          form.mode !== "subagent" && store.skillRule === "allow" && Object.keys(store.skillItem).length === 0
+          form.mode !== "subagent" &&
+          store.skillRule === "allow" &&
+          Object.keys(store.skillItem).length === 0 &&
+          store.skillExtra.length === 0
             ? undefined
             : list
       }
@@ -654,8 +682,10 @@ export const AgentDetail: Component = () => {
         hidden: store.hidden,
         mcpRule: store.mcpRule,
         mcpItem: { ...store.mcpItem },
+        mcpExtra: [...store.mcpExtra],
         skillRule: store.skillRule,
         skillItem: { ...store.skillItem },
+        skillExtra: [...store.skillExtra],
         taskRule: store.taskRule,
         taskItem: { ...store.taskItem },
         perms: { ...store.perms },
