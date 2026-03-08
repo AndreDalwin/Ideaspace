@@ -17,8 +17,20 @@ type SkillItem = {
 }
 
 function classifyOrigin(location: string): SkillOrigin {
-  if (location.includes("/skills/") || location.includes("\\skills\\")) return "managed-global"
-  if (location.includes("/cache/") || location.includes("\\cache\\")) return "inherited-url-cache"
+  const normalized = location.replace(/\\/g, "/").toLowerCase()
+  if (normalized.includes("/cache/")) return "inherited-url-cache"
+  if (normalized.includes("/.claude/") || normalized.includes("/.agents/")) return "inherited-external"
+  if (normalized.includes("/.ideaspace/skills/")) return "managed-global"
+  if (normalized.includes("/opencode/skills/") || normalized.includes("/ideaspace/skills/")) return "managed-global"
+  if (normalized.includes("/skills/")) {
+    const parts = normalized.split("/")
+    const skillsIdx = parts.indexOf("skills")
+    if (skillsIdx > 0) {
+      const parent = parts[skillsIdx - 1]
+      if (parent && (parent.startsWith(".") || parent === "resources" || parent === "data")) return "managed-global"
+    }
+    return "inherited-external"
+  }
   return "inherited-external"
 }
 
@@ -50,12 +62,13 @@ export const SettingsSkills: Component = () => {
   const inherited = createMemo(() => skills().filter((s) => s.origin !== "managed-global"))
 
   const openLocation = (path: string) => {
-    if (platform.openPath) {
-      void platform.openPath(path).catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : String(err)
-        showToast({ title: lang.t("common.requestFailed"), description: message })
-      })
-    }
+    if (!platform.openPath) return
+    const lastSep = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"))
+    const dir = lastSep > 0 ? path.slice(0, lastSep) : path
+    void platform.openPath(dir).catch((err: unknown) => {
+      const message = err instanceof Error ? err.message : String(err)
+      showToast({ title: lang.t("common.requestFailed"), description: message })
+    })
   }
 
   const remove = async (item: SkillItem) => {
@@ -219,16 +232,21 @@ export const SettingsSkills: Component = () => {
               <For each={inherited()}>
                 {(item) => (
                   <div
-                    class="group flex flex-wrap items-center justify-between gap-4 min-h-16 py-3 border-b border-border-weak-base last:border-none"
+                    class="flex flex-wrap items-center justify-between gap-4 min-h-16 py-3 border-b border-border-weak-base last:border-none"
                     data-testid={`skill-row-${item.name}`}
                   >
                     <div class="flex items-center gap-3 min-w-0">
                       <span class="text-14-medium text-text-strong truncate">{item.name}</span>
                       <Tag data-testid={`skill-origin-${item.name}`}>{originLabel(item.origin, lang.t)}</Tag>
                     </div>
-                    <span class="text-14-regular text-text-weak opacity-0 group-hover:opacity-100 transition-opacity duration-200 pr-3 cursor-default">
-                      {item.location}
-                    </span>
+                    <Button
+                      size="large"
+                      variant="ghost"
+                      data-action={`skill-open-location-${item.name}`}
+                      onClick={() => openLocation(item.location)}
+                    >
+                      {lang.t("common.openLocation")}
+                    </Button>
                   </div>
                 )}
               </For>

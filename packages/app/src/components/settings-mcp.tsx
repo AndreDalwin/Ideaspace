@@ -10,22 +10,6 @@ import { useLanguage } from "@/context/language"
 import { Component, createMemo, createSignal, For, Show } from "solid-js"
 import { DialogMcp, type McpInput } from "./dialog-mcp"
 
-const statusIcons = {
-  connected: "circle-check",
-  failed: "circle-xmark",
-  needs_auth: "lock",
-  needs_client_registration: "lock",
-  disabled: "circle",
-} as const
-
-const statusColors = {
-  connected: "text-icon-success-base",
-  failed: "text-icon-critical-base",
-  needs_auth: "text-icon-warning-base",
-  needs_client_registration: "text-icon-warning-base",
-  disabled: "text-text-weaker",
-} as const
-
 export const SettingsMcp: Component = () => {
   const lang = useLanguage()
   const settings = useSettingsConfig()
@@ -72,16 +56,13 @@ export const SettingsMcp: Component = () => {
     setOptimistic((prev) => ({ ...prev, [name]: { ...prev[name], status } }))
   }
 
-  const setOptimisticEnabled = (name: string, enabled: boolean) => {
-    setOptimistic((prev) => ({ ...prev, [name]: { ...prev[name], enabled } }))
-  }
-
   const connect = async (name: string) => {
     setOptimisticStatus(name, "connected")
 
     try {
       await sdk.client.mcp.connect({ name }, { throwOnError: true })
       await settings.reload()
+      rollback(name)
       showToast({
         variant: "success",
         icon: "circle-check",
@@ -100,6 +81,7 @@ export const SettingsMcp: Component = () => {
     try {
       await sdk.client.mcp.disconnect({ name }, { throwOnError: true })
       await settings.reload()
+      rollback(name)
       showToast({
         variant: "success",
         icon: "circle-check",

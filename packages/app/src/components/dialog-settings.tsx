@@ -10,21 +10,7 @@ import { SettingsKeybinds } from "./settings-keybinds"
 import { SettingsProviders } from "./settings-providers"
 import { SettingsModels } from "./settings-models"
 import { SettingsSkills } from "./settings-skills"
-
-const SettingsMcp: Component = () => {
-  const lang = useLanguage()
-  return (
-    <div class="flex flex-col gap-6">
-      <div class="flex items-center justify-between sticky top-0 bg-canvas z-10 pb-4 border-b border-border">
-        <div class="flex flex-col gap-1">
-          <h2 class="text-16-semibold">{lang.t("settings.mcp.title")}</h2>
-          <p class="text-13-regular text-text-secondary">{lang.t("settings.mcp.description")}</p>
-        </div>
-      </div>
-      <div class="text-13-regular text-text-secondary">MCP configuration will be available here.</div>
-    </div>
-  )
-}
+import { SettingsMcp } from "./settings-mcp"
 
 export const DialogSettings: Component = () => {
   const language = useLanguage()

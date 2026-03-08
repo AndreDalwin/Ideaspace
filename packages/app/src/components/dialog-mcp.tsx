@@ -39,6 +39,11 @@ export type McpFormErrors = {
 type HeaderRow = { key: string; value: string }
 type EnvRow = { key: string; value: string }
 
+function rows(map?: Record<string, string>) {
+  const items = Object.entries(map ?? {}).map(([key, value]) => ({ key, value }))
+  return items.length > 0 ? items : [{ key: "", value: "" }]
+}
+
 type Props =
   | { mode: "add"; initialName?: undefined; initialConfig?: undefined }
   | { mode: "edit"; initialName: string; initialConfig: McpInput }
@@ -74,26 +79,36 @@ function parseInitialConfig(config: McpInput): Partial<McpFormState> {
   }
 }
 
-function buildConfig(form: McpFormState, headers: HeaderRow[], env: EnvRow[]): McpInput | undefined {
+function buildConfig(
+  form: McpFormState,
+  headers: HeaderRow[],
+  env: EnvRow[],
+  initial?: McpInput,
+): McpInput | undefined {
   const enabled = form.enabled
   if (form.type === "local") {
     const cmd = form.command.trim()
     if (!cmd) return
-    const command = cmd.split(/\s+/)
+    const command = initial?.type === "local" && cmd === initial.command.join(" ") ? initial.command : cmd.split(/\s+/)
     const environment = Object.fromEntries(env.map((e) => [e.key.trim(), e.value.trim()]).filter(([k]) => k))
     const result: McpInput = { type: "local", command, enabled }
     if (Object.keys(environment).length) result.environment = environment
+    if (initial?.timeout !== undefined) result.timeout = initial.timeout
     return result
   }
   const url = form.url.trim()
   if (!url) return
   const result: McpInput = { type: "remote", url, enabled }
+  if (initial?.timeout !== undefined) result.timeout = initial.timeout
   const headerMap = Object.fromEntries(headers.map((h) => [h.key.trim(), h.value.trim()]).filter(([k]) => k))
   if (Object.keys(headerMap).length) result.headers = headerMap
   if (form.oauth) {
-    const oauth: { clientId?: string; clientSecret?: string } = {}
+    const oauth =
+      initial?.type === "remote" && initial.oauth && typeof initial.oauth === "object" ? { ...initial.oauth } : {}
     if (form.clientId.trim()) oauth.clientId = form.clientId.trim()
+    else delete oauth.clientId
     if (form.clientSecret.trim()) oauth.clientSecret = form.clientSecret.trim()
+    else delete oauth.clientSecret
     result.oauth = oauth
   } else {
     result.oauth = false
@@ -143,6 +158,8 @@ export const DialogMcp: Component<Props> = (props) => {
 
   const isEdit = props.mode === "edit"
   const initial = isEdit && props.initialConfig ? parseInitialConfig(props.initialConfig) : {}
+  const initialHeaders = isEdit && props.initialConfig?.type === "remote" ? rows(props.initialConfig.headers) : rows()
+  const initialEnv = isEdit && props.initialConfig?.type === "local" ? rows(props.initialConfig.environment) : rows()
 
   const [form, setForm] = createStore<McpFormState>({
     name: props.initialName ?? "",
@@ -156,8 +173,8 @@ export const DialogMcp: Component<Props> = (props) => {
     submitting: false,
   })
 
-  const [headers, setHeaders] = createStore<HeaderRow[]>([{ key: "", value: "" }])
-  const [env, setEnv] = createStore<EnvRow[]>([{ key: "", value: "" }])
+  const [headers, setHeaders] = createStore<HeaderRow[]>(initialHeaders)
+  const [env, setEnv] = createStore<EnvRow[]>(initialEnv)
 
   const [errors, setErrors] = createStore<McpFormErrors>({
     name: undefined,
@@ -192,7 +209,7 @@ export const DialogMcp: Component<Props> = (props) => {
     setErrors(errs)
     if (!isValid(errs)) return
 
-    const config = buildConfig(form, headers, env)
+    const config = buildConfig(form, headers, env, props.initialConfig)
     if (!config) return
 
     setForm("submitting", true)
