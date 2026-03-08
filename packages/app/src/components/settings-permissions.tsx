@@ -69,6 +69,21 @@ const ITEMS = [
     description: "settings.permissions.tool.lsp.description",
   },
   {
+    id: "kanban_read",
+    title: "settings.permissions.tool.kanban_read.title",
+    description: "settings.permissions.tool.kanban_read.description",
+  },
+  {
+    id: "kanban_create",
+    title: "settings.permissions.tool.kanban_create.title",
+    description: "settings.permissions.tool.kanban_create.description",
+  },
+  {
+    id: "kanban_update",
+    title: "settings.permissions.tool.kanban_update.title",
+    description: "settings.permissions.tool.kanban_update.description",
+  },
+  {
     id: "todoread",
     title: "settings.permissions.tool.todoread.title",
     description: "settings.permissions.tool.todoread.description",

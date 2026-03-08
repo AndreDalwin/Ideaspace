@@ -27,6 +27,9 @@ interface PermissionState {
   fileEdit: PermissionLevel
   filePaths: string
   imageGenerate: PermissionLevel
+  kanbanRead: PermissionLevel
+  kanbanCreate: PermissionLevel
+  kanbanUpdate: PermissionLevel
   webfetch: PermissionLevel
   websearch: PermissionLevel
   bash: PermissionLevel
@@ -182,6 +185,9 @@ export const AgentDetail: Component = () => {
       fileEdit: "deny" as PermissionLevel,
       filePaths: "",
       imageGenerate: "deny" as PermissionLevel,
+      kanbanRead: "deny" as PermissionLevel,
+      kanbanCreate: "deny" as PermissionLevel,
+      kanbanUpdate: "deny" as PermissionLevel,
       webfetch: "deny" as PermissionLevel,
       websearch: "deny" as PermissionLevel,
       bash: "deny" as PermissionLevel,
@@ -219,6 +225,9 @@ export const AgentDetail: Component = () => {
       fileEdit: "deny" as PermissionLevel,
       filePaths: "",
       imageGenerate: "deny" as PermissionLevel,
+      kanbanRead: "deny" as PermissionLevel,
+      kanbanCreate: "deny" as PermissionLevel,
+      kanbanUpdate: "deny" as PermissionLevel,
       webfetch: "deny" as PermissionLevel,
       websearch: "deny" as PermissionLevel,
       bash: "deny" as PermissionLevel,
@@ -444,6 +453,9 @@ export const AgentDetail: Component = () => {
     const read = permissionState(a.permission, "read")
     const edit = permissionState(a.permission, "edit")
     const imageGenerate = permissionState(a.permission, "image_generate")
+    const kanbanRead = permissionState(a.permission, "kanban_read")
+    const kanbanCreate = permissionState(a.permission, "kanban_create")
+    const kanbanUpdate = permissionState(a.permission, "kanban_update")
     const webfetch = permissionState(a.permission, "webfetch")
     const websearch = permissionState(a.permission, "websearch")
     const bash = permissionState(a.permission, "bash")
@@ -477,6 +489,9 @@ export const AgentDetail: Component = () => {
         fileEdit: edit.rule,
         filePaths: allowed(edit.item),
         imageGenerate: imageGenerate.rule,
+        kanbanRead: kanbanRead.rule,
+        kanbanCreate: kanbanCreate.rule,
+        kanbanUpdate: kanbanUpdate.rule,
         webfetch: webfetch.rule,
         websearch: websearch.rule,
         bash: bash.rule,
@@ -513,6 +528,9 @@ export const AgentDetail: Component = () => {
       fileEdit: next.perms.fileEdit,
       filePaths: next.perms.filePaths,
       imageGenerate: next.perms.imageGenerate,
+      kanbanRead: next.perms.kanbanRead,
+      kanbanCreate: next.perms.kanbanCreate,
+      kanbanUpdate: next.perms.kanbanUpdate,
       webfetch: next.perms.webfetch,
       websearch: next.perms.websearch,
       bash: next.perms.bash,
@@ -601,6 +619,9 @@ export const AgentDetail: Component = () => {
       if (store.perms.imageGenerate !== base.perms.imageGenerate) {
         setPermission("image_generate", store.perms.imageGenerate)
       }
+      if (store.perms.kanbanRead !== base.perms.kanbanRead) setPermission("kanban_read", store.perms.kanbanRead)
+      if (store.perms.kanbanCreate !== base.perms.kanbanCreate) setPermission("kanban_create", store.perms.kanbanCreate)
+      if (store.perms.kanbanUpdate !== base.perms.kanbanUpdate) setPermission("kanban_update", store.perms.kanbanUpdate)
       if (store.perms.webfetch !== base.perms.webfetch) setPermission("webfetch", store.perms.webfetch)
       if (store.perms.websearch !== base.perms.websearch) setPermission("websearch", store.perms.websearch)
       if (store.perms.bash !== base.perms.bash || store.perms.bashPaths !== base.perms.bashPaths) {
@@ -723,6 +744,9 @@ export const AgentDetail: Component = () => {
     if (store.perms.fileEdit !== base.perms.fileEdit) return true
     if (store.perms.filePaths !== base.perms.filePaths) return true
     if (store.perms.imageGenerate !== base.perms.imageGenerate) return true
+    if (store.perms.kanbanRead !== base.perms.kanbanRead) return true
+    if (store.perms.kanbanCreate !== base.perms.kanbanCreate) return true
+    if (store.perms.kanbanUpdate !== base.perms.kanbanUpdate) return true
     if (store.perms.webfetch !== base.perms.webfetch) return true
     if (store.perms.websearch !== base.perms.websearch) return true
     if (store.perms.bash !== base.perms.bash) return true
@@ -1191,6 +1215,33 @@ export const AgentDetail: Component = () => {
                             level={store.perms.imageGenerate}
                             onChange={(v) => {
                               setStore("perms", "imageGenerate", v)
+                              setStore("isEditing", true)
+                            }}
+                          />
+                          <PermissionRow
+                            label="Kanban read"
+                            desc="Read project kanban cards from .ideaspace/kanban.json"
+                            level={store.perms.kanbanRead}
+                            onChange={(v) => {
+                              setStore("perms", "kanbanRead", v)
+                              setStore("isEditing", true)
+                            }}
+                          />
+                          <PermissionRow
+                            label="Kanban create"
+                            desc="Create project kanban cards in .ideaspace/kanban.json"
+                            level={store.perms.kanbanCreate}
+                            onChange={(v) => {
+                              setStore("perms", "kanbanCreate", v)
+                              setStore("isEditing", true)
+                            }}
+                          />
+                          <PermissionRow
+                            label="Kanban update"
+                            desc="Update project kanban cards in .ideaspace/kanban.json"
+                            level={store.perms.kanbanUpdate}
+                            onChange={(v) => {
+                              setStore("perms", "kanbanUpdate", v)
                               setStore("isEditing", true)
                             }}
                           />
