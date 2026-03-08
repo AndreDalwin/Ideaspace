@@ -1,0 +1,1 @@
+- No blockers encountered while reordering tabs and routing session into the project shell.

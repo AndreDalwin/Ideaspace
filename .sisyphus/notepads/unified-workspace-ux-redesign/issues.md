@@ -1,0 +1,1 @@
+- Unable to run lsp_diagnostics because the typescript-language-server is not installed in this environment.
