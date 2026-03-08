@@ -255,7 +255,7 @@ function createSessionHistoryWindow(input: SessionHistoryWindowInput) {
   }
 }
 
-export default function Page() {
+export function SessionPage(props: { embedded?: boolean }) {
   const globalSync = useGlobalSync()
   const layout = useLayout()
   const local = useLocal()
@@ -1242,11 +1242,9 @@ export default function Page() {
     if (scrollStateFrame !== undefined) cancelAnimationFrame(scrollStateFrame)
   })
 
-  return (
-    <div class="relative bg-background-base size-full overflow-hidden flex flex-col">
-      <ProjectTabs />
-      <SessionHeader />
-      <div class="flex-1 min-h-0 flex flex-col md:flex-row">
+  const body = (
+    <div class="flex-1 min-h-0 flex flex-col md:flex-row">
+      <Show when={!props.embedded}>
         <SessionMobileTabs
           open={!isDesktop() && !!params.id}
           mobileTab={store.mobileTab}
@@ -1255,122 +1253,135 @@ export default function Page() {
           onSession={() => setStore("mobileTab", "session")}
           onChanges={() => setStore("mobileTab", "changes")}
         />
+      </Show>
 
-        {/* Session panel */}
-        <div
-          classList={{
-            "@container relative shrink-0 flex flex-col min-h-0 h-full bg-background-stronger": true,
-            "flex-1": true,
-            "md:flex-none": desktopSidePanelOpen(),
-          }}
-          style={{
-            width: sessionPanelWidth(),
-          }}
-        >
-          <div class="flex-1 min-h-0 overflow-hidden">
-            <Switch>
-              <Match when={params.id}>
-                <Show when={activeMessage()}>
-                  <MessageTimeline
-                    mobileChanges={mobileChanges()}
-                    mobileFallback={reviewContent({
-                      diffStyle: "unified",
-                      classes: {
-                        root: "pb-8",
-                        header: "px-4",
-                        container: "px-4",
-                      },
-                      loadingClass: "px-4 py-4 text-text-weak",
-                      emptyClass: "h-full pb-30 flex flex-col items-center justify-center text-center gap-6",
-                    })}
-                    scroll={ui.scroll}
-                    onResumeScroll={resumeScroll}
-                    setScrollRef={setScrollRef}
-                    onScheduleScrollState={scheduleScrollState}
-                    onAutoScrollHandleScroll={autoScroll.handleScroll}
-                    onMarkScrollGesture={markScrollGesture}
-                    hasScrollGesture={hasScrollGesture}
-                    isDesktop={isDesktop()}
-                    onScrollSpyScroll={scrollSpy.onScroll}
-                    onTurnBackfillScroll={historyWindow.onScrollerScroll}
-                    onAutoScrollInteraction={autoScroll.handleInteraction}
-                    centered={centered()}
-                    setContentRef={(el) => {
-                      content = el
-                      autoScroll.contentRef(el)
+      <div
+        classList={{
+          "@container relative shrink-0 flex flex-col min-h-0 h-full bg-background-stronger": true,
+          "flex-1": true,
+          "md:flex-none": !props.embedded && desktopSidePanelOpen(),
+        }}
+        style={props.embedded ? undefined : { width: sessionPanelWidth() }}
+      >
+        <div class="flex-1 min-h-0 overflow-hidden">
+          <Switch>
+            <Match when={params.id}>
+              <Show when={activeMessage()}>
+                <MessageTimeline
+                  mobileChanges={mobileChanges()}
+                  mobileFallback={reviewContent({
+                    diffStyle: "unified",
+                    classes: {
+                      root: "pb-8",
+                      header: "px-4",
+                      container: "px-4",
+                    },
+                    loadingClass: "px-4 py-4 text-text-weak",
+                    emptyClass: "h-full pb-30 flex flex-col items-center justify-center text-center gap-6",
+                  })}
+                  scroll={ui.scroll}
+                  onResumeScroll={resumeScroll}
+                  setScrollRef={setScrollRef}
+                  onScheduleScrollState={scheduleScrollState}
+                  onAutoScrollHandleScroll={autoScroll.handleScroll}
+                  onMarkScrollGesture={markScrollGesture}
+                  hasScrollGesture={hasScrollGesture}
+                  isDesktop={isDesktop()}
+                  onScrollSpyScroll={scrollSpy.onScroll}
+                  onTurnBackfillScroll={historyWindow.onScrollerScroll}
+                  onAutoScrollInteraction={autoScroll.handleInteraction}
+                  centered={centered()}
+                  setContentRef={(el) => {
+                    content = el
+                    autoScroll.contentRef(el)
 
-                      const root = scroller
-                      if (root) scheduleScrollState(root)
-                    }}
-                    turnStart={historyWindow.turnStart()}
-                    historyMore={historyMore()}
-                    historyLoading={historyLoading()}
-                    onLoadEarlier={() => {
-                      void historyWindow.loadAndReveal()
-                    }}
-                    renderedUserMessages={historyWindow.renderedUserMessages()}
-                    anchor={anchor}
-                    onRegisterMessage={scrollSpy.register}
-                    onUnregisterMessage={scrollSpy.unregister}
-                  />
-                </Show>
-              </Match>
-              <Match when={true}>
-                <NewSessionView
-                  worktree={newSessionWorktree()}
-                  onWorktreeChange={(value) => {
-                    if (value === "create") {
-                      setStore("newSessionWorktree", value)
-                      return
-                    }
-
-                    setStore("newSessionWorktree", "main")
-
-                    const target = value === "main" ? sync.project?.worktree : value
-                    if (!target) return
-                    if (target === sdk.directory) return
-                    layout.projects.open(target)
-                    navigate(`/${base64Encode(target)}/session`)
+                    const root = scroller
+                    if (root) scheduleScrollState(root)
                   }}
+                  turnStart={historyWindow.turnStart()}
+                  historyMore={historyMore()}
+                  historyLoading={historyLoading()}
+                  onLoadEarlier={() => {
+                    void historyWindow.loadAndReveal()
+                  }}
+                  renderedUserMessages={historyWindow.renderedUserMessages()}
+                  anchor={anchor}
+                  onRegisterMessage={scrollSpy.register}
+                  onUnregisterMessage={scrollSpy.unregister}
                 />
-              </Match>
-            </Switch>
-          </div>
+              </Show>
+            </Match>
+            <Match when={true}>
+              <NewSessionView
+                worktree={newSessionWorktree()}
+                onWorktreeChange={(value) => {
+                  if (value === "create") {
+                    setStore("newSessionWorktree", value)
+                    return
+                  }
 
-          <SessionComposerRegion
-            state={composer}
-            ready={!store.deferRender && messagesReady()}
-            centered={centered()}
-            inputRef={(el) => {
-              inputRef = el
-            }}
-            newSessionWorktree={newSessionWorktree()}
-            onNewSessionWorktreeReset={() => setStore("newSessionWorktree", "main")}
-            onSubmit={() => {
-              comments.clear()
-              resumeScroll()
-            }}
-            onResponseSubmit={resumeScroll}
-            setPromptDockRef={(el) => {
-              promptDock = el
-            }}
-          />
+                  setStore("newSessionWorktree", "main")
 
-          <Show when={desktopReviewOpen()}>
-            <ResizeHandle
-              direction="horizontal"
-              size={layout.session.width()}
-              min={450}
-              max={typeof window === "undefined" ? 1000 : window.innerWidth * 0.45}
-              onResize={layout.session.resize}
-            />
-          </Show>
+                  const target = value === "main" ? sync.project?.worktree : value
+                  if (!target) return
+                  if (target === sdk.directory) return
+                  layout.projects.open(target)
+                  navigate(`/${base64Encode(target)}/session`)
+                }}
+              />
+            </Match>
+          </Switch>
         </div>
 
-        <SessionSidePanel reviewPanel={reviewPanel} activeDiff={tree.activeDiff} focusReviewDiff={focusReviewDiff} />
+        <SessionComposerRegion
+          state={composer}
+          ready={!store.deferRender && messagesReady()}
+          centered={centered()}
+          inputRef={(el) => {
+            inputRef = el
+          }}
+          newSessionWorktree={newSessionWorktree()}
+          onNewSessionWorktreeReset={() => setStore("newSessionWorktree", "main")}
+          onSubmit={() => {
+            comments.clear()
+            resumeScroll()
+          }}
+          onResponseSubmit={resumeScroll}
+          setPromptDockRef={(el) => {
+            promptDock = el
+          }}
+        />
+
+        <Show when={!props.embedded && desktopReviewOpen()}>
+          <ResizeHandle
+            direction="horizontal"
+            size={layout.session.width()}
+            min={450}
+            max={typeof window === "undefined" ? 1000 : window.innerWidth * 0.45}
+            onResize={layout.session.resize}
+          />
+        </Show>
       </div>
 
+      <Show when={!props.embedded}>
+        <SessionSidePanel reviewPanel={reviewPanel} activeDiff={tree.activeDiff} focusReviewDiff={focusReviewDiff} />
+      </Show>
+    </div>
+  )
+
+  if (props.embedded)
+    return <div class="relative bg-background-base size-full overflow-hidden flex flex-col">{body}</div>
+
+  return (
+    <div class="relative bg-background-base size-full overflow-hidden flex flex-col">
+      <ProjectTabs />
+      <SessionHeader />
+      {body}
       <TerminalPanel />
     </div>
   )
+}
+
+export default function Page() {
+  return <SessionPage />
 }

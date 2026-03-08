@@ -1,7 +1,7 @@
 import type { Message } from "@opencode-ai/sdk/v2/client"
 import { showToast } from "@opencode-ai/ui/toast"
 import { base64Encode } from "@opencode-ai/util/encode"
-import { useNavigate, useParams } from "@solidjs/router"
+import { useLocation, useNavigate, useParams } from "@solidjs/router"
 import type { Accessor } from "solid-js"
 import type { FileSelection } from "@/context/file"
 import { useGlobalSync } from "@/context/global-sync"
@@ -64,6 +64,14 @@ export function createPromptSubmit(input: PromptSubmitInput) {
   const layout = useLayout()
   const language = useLanguage()
   const params = useParams()
+  const location = useLocation()
+
+  const sessionHref = (directory: string, id: string) => {
+    const slug = base64Encode(directory)
+    if (location.pathname.includes("/kanban")) return `/${slug}/kanban/${id}`
+    if (location.pathname.includes("/plan")) return `/${slug}/plan/${id}`
+    return `/${slug}/session/${id}`
+  }
 
   const errorMessage = (err: unknown) => {
     if (err && typeof err === "object" && "data" in err) {
@@ -204,7 +212,7 @@ export function createPromptSubmit(input: PromptSubmitInput) {
       if (session) {
         if (shouldAutoAccept) permission.enableAutoAccept(session.id, sessionDirectory)
         layout.handoff.setTabs(base64Encode(sessionDirectory), session.id)
-        navigate(`/${base64Encode(sessionDirectory)}/session/${session.id}`)
+        navigate(sessionHref(sessionDirectory, session.id))
       }
     }
     if (!session) {

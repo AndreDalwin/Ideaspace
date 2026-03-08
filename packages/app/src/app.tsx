@@ -33,8 +33,9 @@ import { ErrorPage } from "./pages/error"
 import { Dynamic } from "solid-js/web"
 
 const Home = lazy(() => import("@/pages/home"))
-const Project = lazy(() => import("@/pages/project"))
 const Session = lazy(() => import("@/pages/session"))
+const Plan = lazy(() => import("@/pages/plan"))
+const Kanban = lazy(() => import("@/pages/kanban"))
 const Loading = () => <div class="size-full" />
 
 const HomeRoute = () => (
@@ -51,13 +52,26 @@ const SessionRoute = () => (
   </SessionProviders>
 )
 
-const ProjectRoute = () => (
-  <Suspense fallback={<Loading />}>
-    <Project />
-  </Suspense>
+const PlanRoute = () => (
+  <SessionProviders>
+    <Suspense fallback={<Loading />}>
+      <Plan />
+    </Suspense>
+  </SessionProviders>
 )
 
-const SessionIndexRoute = () => <Navigate href="workspace" />
+const KanbanRoute = () => (
+  <SessionProviders>
+    <Suspense fallback={<Loading />}>
+      <Kanban />
+    </Suspense>
+  </SessionProviders>
+)
+
+const SessionIndexRoute = () => <Navigate href="plan" />
+const WorkspaceRedirectRoute = () => <Navigate href="../plan" />
+const TasksRedirectRoute = () => <Navigate href="../kanban" />
+const ProjectRedirectRoute = () => <Navigate href="../plan" />
 
 function UiI18nBridge(props: ParentProps) {
   const language = useLanguage()
@@ -172,11 +186,13 @@ export function AppInterface(props: {
               <Route path="/" component={HomeRoute} />
               <Route path="/:dir" component={DirectoryLayout}>
                 <Route path="/" component={SessionIndexRoute} />
-                <Route path="/workspace" component={ProjectRoute} />
-                <Route path="/tasks" component={ProjectRoute} />
-                <Route path="/agents" component={ProjectRoute} />
-                <Route path="/context" component={ProjectRoute} />
-                <Route path="/session/:id?" component={SessionRoute} />
+                <Route path="plan/:id?" component={PlanRoute} />
+                <Route path="kanban/:id?" component={KanbanRoute} />
+                <Route path="workspace" component={WorkspaceRedirectRoute} />
+                <Route path="tasks" component={TasksRedirectRoute} />
+                <Route path="agents" component={ProjectRedirectRoute} />
+                <Route path="context" component={ProjectRedirectRoute} />
+                <Route path="session/:id?" component={SessionRoute} />
               </Route>
             </Dynamic>
           </GlobalSyncProvider>
