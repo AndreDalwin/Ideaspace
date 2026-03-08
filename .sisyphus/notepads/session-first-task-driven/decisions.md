@@ -1,0 +1,1 @@
+- Keep the session tab inside `ProjectRoute` so it shares the existing layout, and only add terminal/prompt/comments providers around the session view rather than keeping a standalone route.

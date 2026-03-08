@@ -44,6 +44,17 @@ export const dict = {
   "command.language.set": "Use language: {{language}}",
 
   "command.session.new": "New session",
+  "command.session.new.description": "Start a new chat session",
+  "command.nav.workspace": "Go to Workspace",
+  "command.nav.workspace.description": "Navigate to the Workspace tab",
+  "command.nav.tasks": "Go to Tasks",
+  "command.nav.tasks.description": "Navigate to the Tasks tab",
+  "command.nav.agents": "Go to Agents",
+  "command.nav.agents.description": "Navigate to the Agents tab",
+  "command.nav.context": "Go to Context",
+  "command.nav.context.description": "Navigate to the Context tab",
+  "command.nav.session": "Go to Session",
+  "command.nav.session.description": "Navigate to the Session tab",
   "command.file.open": "Open file",
   "command.tab.close": "Close tab",
   "command.context.addSelection": "Add selection to context",
@@ -91,6 +102,7 @@ export const dict = {
 
   "palette.search.placeholder": "Search files, commands, and sessions",
   "palette.empty": "No results found",
+  "palette.group.navigation": "Navigation",
   "palette.group.commands": "Commands",
   "palette.group.files": "Files",
 

@@ -1,0 +1,10 @@
+Import tasks from a plan file to the Kanban board.
+
+This tool converts TODO items from a plan markdown file into trackable tasks. It parses the ## TODOs section of the plan and creates tasks for each checkbox item (- [ ] or - [x]).
+
+The AI should use this tool when:
+- A plan has been created or updated and the user wants to start tracking tasks
+- The user says "convert this to tasks" or "import to task board"
+- The plan is complete and ready for implementation
+
+Example planPath: ".ideaspace/plans/2024-01-15-feature-auth.md"

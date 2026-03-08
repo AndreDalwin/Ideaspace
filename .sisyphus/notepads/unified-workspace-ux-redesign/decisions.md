@@ -1,0 +1,1 @@
+- ProjectTabs should only render when view() is "agents" or "context" so the unified workspace (session/workspace/tasks) stays tab-free.

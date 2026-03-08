@@ -161,6 +161,39 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
     }),
   ])
 
+  const navCommands = createMemo(() => [
+    viewCommand({
+      id: "nav.workspace",
+      title: language.t("command.nav.workspace"),
+      description: language.t("command.nav.workspace.description"),
+      onSelect: () => navigate(`/${params.dir}/workspace`),
+    }),
+    viewCommand({
+      id: "nav.tasks",
+      title: language.t("command.nav.tasks"),
+      description: language.t("command.nav.tasks.description"),
+      onSelect: () => navigate(`/${params.dir}/tasks`),
+    }),
+    viewCommand({
+      id: "nav.agents",
+      title: language.t("command.nav.agents"),
+      description: language.t("command.nav.agents.description"),
+      onSelect: () => navigate(`/${params.dir}/agents`),
+    }),
+    viewCommand({
+      id: "nav.context",
+      title: language.t("command.nav.context"),
+      description: language.t("command.nav.context.description"),
+      onSelect: () => navigate(`/${params.dir}/context`),
+    }),
+    viewCommand({
+      id: "nav.session",
+      title: language.t("command.nav.session"),
+      description: language.t("command.nav.session.description"),
+      onSelect: () => navigate(`/${params.dir}/session`),
+    }),
+  ])
+
   const viewCommands = createMemo(() => [
     viewCommand({
       id: "terminal.toggle",
@@ -494,6 +527,7 @@ export const useSessionCommands = (actions: SessionCommandContext) => {
       sessionCommands(),
       fileCommands(),
       contextCommands(),
+      navCommands(),
       viewCommands(),
       messageCommands(),
       agentCommands(),

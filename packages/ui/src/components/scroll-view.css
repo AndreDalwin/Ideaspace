@@ -9,6 +9,7 @@
   overflow-y: auto;
   scrollbar-width: none;
   outline: none;
+  scroll-behavior: smooth;
 }
 
 .scroll-view__viewport::-webkit-scrollbar {
