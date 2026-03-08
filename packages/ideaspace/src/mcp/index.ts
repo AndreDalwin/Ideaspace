@@ -62,6 +62,7 @@ export namespace MCP {
   )
 
   type MCPClient = Client
+  type McpTool = Tool & { client: string }
 
   export const Status = z
     .discriminatedUnion("status", [
@@ -117,7 +118,12 @@ export namespace MCP {
   }
 
   // Convert MCP tool definition to AI SDK Tool type
-  async function convertMcpTool(mcpTool: MCPToolDef, client: MCPClient, timeout?: number): Promise<Tool> {
+  async function convertMcpTool(
+    mcpTool: MCPToolDef,
+    client: MCPClient,
+    clientName: string,
+    timeout?: number,
+  ): Promise<McpTool> {
     const inputSchema = mcpTool.inputSchema
 
     // Spread first, then override type to ensure it's always "object"
@@ -128,23 +134,26 @@ export namespace MCP {
       additionalProperties: false,
     }
 
-    return dynamicTool({
-      description: mcpTool.description ?? "",
-      inputSchema: jsonSchema(schema),
-      execute: async (args: unknown) => {
-        return client.callTool(
-          {
-            name: mcpTool.name,
-            arguments: (args || {}) as Record<string, unknown>,
-          },
-          CallToolResultSchema,
-          {
-            resetTimeoutOnProgress: true,
-            timeout,
-          },
-        )
-      },
-    })
+    return {
+      ...dynamicTool({
+        description: mcpTool.description ?? "",
+        inputSchema: jsonSchema(schema),
+        execute: async (args: unknown) => {
+          return client.callTool(
+            {
+              name: mcpTool.name,
+              arguments: (args || {}) as Record<string, unknown>,
+            },
+            CallToolResultSchema,
+            {
+              resetTimeoutOnProgress: true,
+              timeout,
+            },
+          )
+        },
+      }),
+      client: clientName,
+    }
   }
 
   // Store transports for OAuth servers to allow finishing auth
@@ -601,7 +610,7 @@ export namespace MCP {
   }
 
   export async function tools() {
-    const result: Record<string, Tool> = {}
+    const result: Record<string, McpTool> = {}
     const s = await state()
     const cfg = await Config.get()
     const config = cfg.mcp ?? {}
@@ -636,7 +645,12 @@ export namespace MCP {
       for (const mcpTool of toolsResult.tools) {
         const sanitizedClientName = clientName.replace(/[^a-zA-Z0-9_-]/g, "_")
         const sanitizedToolName = mcpTool.name.replace(/[^a-zA-Z0-9_-]/g, "_")
-        result[sanitizedClientName + "_" + sanitizedToolName] = await convertMcpTool(mcpTool, client, timeout)
+        result[sanitizedClientName + "_" + sanitizedToolName] = await convertMcpTool(
+          mcpTool,
+          client,
+          clientName,
+          timeout,
+        )
       }
     }
     return result

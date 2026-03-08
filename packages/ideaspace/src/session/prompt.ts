@@ -835,8 +835,7 @@ export namespace SessionPrompt {
 
     for (const [key, item] of Object.entries(await MCP.tools())) {
       if (mcpAllowlist !== undefined) {
-        const clientName = key.split("_")[0]
-        if (!mcpAllowlist.includes(clientName)) continue
+        if (!mcpAllowlist.includes(item.client)) continue
       }
 
       const execute = item.execute

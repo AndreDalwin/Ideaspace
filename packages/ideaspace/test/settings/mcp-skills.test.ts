@@ -1,26 +1,11 @@
-import { describe, expect, test, beforeEach, afterEach } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import path from "path"
-import fs from "fs/promises"
 import { Instance } from "../../src/project/instance"
 import { Agent } from "../../src/agent/agent"
-import { Config } from "../../src/config/config"
 import { SkillTool } from "../../src/tool/skill"
-import { Skill } from "../../src/skill/skill"
 import { tmpdir } from "../fixture/fixture"
-import type { Tool } from "../../src/tool/tool"
-import type { PermissionNext } from "../../src/permission/next"
 
 describe("mcp and skills runtime filtering", () => {
-  const baseCtx: Omit<Tool.Context, "ask"> = {
-    sessionID: "test",
-    messageID: "",
-    callID: "",
-    agent: "build",
-    abort: AbortSignal.any([]),
-    messages: [],
-    metadata: () => {},
-  }
-
   describe("inheritance model", () => {
     test("primary agents have undefined allowlists by default (inherit all)", async () => {
       await using tmp = await tmpdir({
@@ -299,7 +284,7 @@ describe("mcp and skills runtime filtering", () => {
         init: async (dir) => {
           // Create multiple skills
           await Bun.write(
-            path.join(dir, ".opencode", "skill", "skill-one", "SKILL.md"),
+            path.join(dir, ".ideaspace", "skill", "skill-one", "SKILL.md"),
             `---
 name: skill-one
 description: First test skill.
@@ -308,7 +293,7 @@ description: First test skill.
 `,
           )
           await Bun.write(
-            path.join(dir, ".opencode", "skill", "skill-two", "SKILL.md"),
+            path.join(dir, ".ideaspace", "skill", "skill-two", "SKILL.md"),
             `---
 name: skill-two
 description: Second test skill.
@@ -326,10 +311,11 @@ description: Second test skill.
           const agentInfo = {
             name: "build",
             mode: "primary" as const,
+            options: {},
             permission: [],
           }
 
-          const tool = await SkillTool.init(agentInfo)
+          const tool = await SkillTool.init({ agent: agentInfo })
           expect(tool.description).toContain("skill-one")
           expect(tool.description).toContain("skill-two")
         },
@@ -341,7 +327,7 @@ description: Second test skill.
         git: true,
         init: async (dir) => {
           await Bun.write(
-            path.join(dir, ".opencode", "skill", "allowed-skill", "SKILL.md"),
+            path.join(dir, ".ideaspace", "skill", "allowed-skill", "SKILL.md"),
             `---
 name: allowed-skill
 description: Allowed skill.
@@ -350,7 +336,7 @@ description: Allowed skill.
 `,
           )
           await Bun.write(
-            path.join(dir, ".opencode", "skill", "blocked-skill", "SKILL.md"),
+            path.join(dir, ".ideaspace", "skill", "blocked-skill", "SKILL.md"),
             `---
 name: blocked-skill
 description: Blocked skill.
@@ -368,11 +354,12 @@ description: Blocked skill.
           const agentInfo = {
             name: "restricted",
             mode: "primary" as const,
+            options: {},
             skills: ["allowed-skill"],
             permission: [],
           }
 
-          const tool = await SkillTool.init(agentInfo)
+          const tool = await SkillTool.init({ agent: agentInfo })
           expect(tool.description).toContain("allowed-skill")
           expect(tool.description).not.toContain("blocked-skill")
         },
@@ -384,7 +371,7 @@ description: Blocked skill.
         git: true,
         init: async (dir) => {
           await Bun.write(
-            path.join(dir, ".opencode", "skill", "some-skill", "SKILL.md"),
+            path.join(dir, ".ideaspace", "skill", "some-skill", "SKILL.md"),
             `---
 name: some-skill
 description: Some skill.
@@ -402,10 +389,11 @@ description: Some skill.
           const agentInfo = {
             name: "general",
             mode: "subagent" as const,
+            options: {},
             permission: [],
           }
 
-          const tool = await SkillTool.init(agentInfo)
+          const tool = await SkillTool.init({ agent: agentInfo })
           // Should show "No skills are currently available"
           expect(tool.description).toContain("No skills are currently available")
           expect(tool.description).not.toContain("some-skill")
@@ -418,7 +406,7 @@ description: Some skill.
         git: true,
         init: async (dir) => {
           await Bun.write(
-            path.join(dir, ".opencode", "skill", "allowed-skill", "SKILL.md"),
+            path.join(dir, ".ideaspace", "skill", "allowed-skill", "SKILL.md"),
             `---
 name: allowed-skill
 description: Allowed skill for subagent.
@@ -427,7 +415,7 @@ description: Allowed skill for subagent.
 `,
           )
           await Bun.write(
-            path.join(dir, ".opencode", "skill", "other-skill", "SKILL.md"),
+            path.join(dir, ".ideaspace", "skill", "other-skill", "SKILL.md"),
             `---
 name: other-skill
 description: Other skill.
@@ -445,11 +433,12 @@ description: Other skill.
           const agentInfo = {
             name: "customSubagent",
             mode: "subagent" as const,
+            options: {},
             skills: ["allowed-skill"],
             permission: [],
           }
 
-          const tool = await SkillTool.init(agentInfo)
+          const tool = await SkillTool.init({ agent: agentInfo })
           expect(tool.description).toContain("allowed-skill")
           expect(tool.description).not.toContain("other-skill")
         },
@@ -461,7 +450,7 @@ description: Other skill.
         git: true,
         init: async (dir) => {
           await Bun.write(
-            path.join(dir, ".opencode", "skill", "existing-skill", "SKILL.md"),
+            path.join(dir, ".ideaspace", "skill", "existing-skill", "SKILL.md"),
             `---
 name: existing-skill
 description: An existing skill.
@@ -479,11 +468,12 @@ description: An existing skill.
           const agentInfo = {
             name: "blocked",
             mode: "primary" as const,
+            options: {},
             skills: [],
             permission: [],
           }
 
-          const tool = await SkillTool.init(agentInfo)
+          const tool = await SkillTool.init({ agent: agentInfo })
           expect(tool.description).toContain("No skills are currently available")
           expect(tool.description).not.toContain("existing-skill")
         },
@@ -568,21 +558,19 @@ description: An existing skill.
       })
     })
 
-    test("mcpAllowlist filters MCP tools by client name prefix", async () => {
-      // This test verifies the filtering logic used in resolveTools
-      const mcpTools: Record<string, unknown> = {
-        allowedClient_tool1: {},
-        allowedClient_tool2: {},
-        blockedClient_tool1: {},
+    test("mcpAllowlist filters MCP tools by stored client metadata", async () => {
+      const mcpTools = {
+        allowedClient_tool1: { client: "allowedClient" },
+        allowedClient_tool2: { client: "allowedClient" },
+        blockedClient_tool1: { client: "blockedClient" },
       }
 
       const mcpAllowlist = ["allowedClient"]
 
-      const filteredTools: Record<string, unknown> = {}
+      const filteredTools: Record<string, { client: string }> = {}
       for (const [key, item] of Object.entries(mcpTools)) {
         if (mcpAllowlist !== undefined) {
-          const clientName = key.split("_")[0]
-          if (!mcpAllowlist.includes(clientName)) continue
+          if (!mcpAllowlist.includes(item.client)) continue
         }
         filteredTools[key] = item
       }
@@ -592,27 +580,26 @@ description: An existing skill.
       expect(Object.keys(filteredTools)).not.toContain("blockedClient_tool1")
     })
 
-    test("mcpAllowlist with multiple entries allows tools from all listed clients", async () => {
-      const mcpTools: Record<string, unknown> = {
-        clientA_tool1: {},
-        clientB_tool1: {},
-        clientC_tool1: {},
+    test("mcpAllowlist supports client names that contain underscores", async () => {
+      const mcpTools = {
+        github_mcp_list_issues: { client: "github_mcp" },
+        github_mcp_create_issue: { client: "github_mcp" },
+        docs_search: { client: "docs" },
       }
 
-      const mcpAllowlist = ["clientA", "clientB"]
+      const mcpAllowlist = ["github_mcp"]
 
-      const filteredTools: Record<string, unknown> = {}
+      const filteredTools: Record<string, { client: string }> = {}
       for (const [key, item] of Object.entries(mcpTools)) {
         if (mcpAllowlist !== undefined) {
-          const clientName = key.split("_")[0]
-          if (!mcpAllowlist.includes(clientName)) continue
+          if (!mcpAllowlist.includes(item.client)) continue
         }
         filteredTools[key] = item
       }
 
-      expect(Object.keys(filteredTools)).toContain("clientA_tool1")
-      expect(Object.keys(filteredTools)).toContain("clientB_tool1")
-      expect(Object.keys(filteredTools)).not.toContain("clientC_tool1")
+      expect(Object.keys(filteredTools)).toContain("github_mcp_list_issues")
+      expect(Object.keys(filteredTools)).toContain("github_mcp_create_issue")
+      expect(Object.keys(filteredTools)).not.toContain("docs_search")
     })
   })
 
