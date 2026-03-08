@@ -3,7 +3,7 @@ import { createSimpleContext } from "@opencode-ai/ui/context"
 import { createGlobalEmitter } from "@solid-primitives/event-bus"
 import { batch, onCleanup } from "solid-js"
 import z from "zod"
-import { createSdkForServer } from "@/utils/server"
+import { createSdkForServer, pickFetch } from "@/utils/server"
 import { usePlatform } from "./platform"
 import { useServer } from "./server"
 
@@ -18,19 +18,10 @@ export const { use: useGlobalSDK, provider: GlobalSDKProvider } = createSimpleCo
     const platform = usePlatform()
     const abort = new AbortController()
 
-    const eventFetch = (() => {
-      if (!platform.fetch || !server.current) return
-      try {
-        const url = new URL(server.current.http.url)
-        const loopback = url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "::1"
-        if (url.protocol === "http:" && !loopback) return platform.fetch
-      } catch {
-        return
-      }
-    })()
-
     const currentServer = server.current
     if (!currentServer) throw new Error("No server available")
+
+    const eventFetch = pickFetch(currentServer.http, platform.fetch)
 
     const eventSdk = createSdkForServer({
       signal: abort.signal,

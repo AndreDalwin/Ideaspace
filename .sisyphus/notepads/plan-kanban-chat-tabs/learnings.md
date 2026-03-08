@@ -1,0 +1,2 @@
+- 2026-03-08: Trimmed project tabs to Plan/Kanban/Session. Kept session routing/active helpers unchanged so existing chat experiences stay intact while new tabs route to /{dir}/plan and /{dir}/kanban.
+- 2026-03-08: Wired the router so /{dir}/plan and /{dir}/kanban load their lazy pages, redirected the default /{dir} to /{dir}/plan, and removed the legacy Switch/Match block in project.tsx.

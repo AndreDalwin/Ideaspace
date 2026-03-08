@@ -1,6 +1,6 @@
-import { A, useLocation, useParams } from "@solidjs/router"
+import { A, useParams } from "@solidjs/router"
 import { getFilename } from "@opencode-ai/util/path"
-import { For, Match, type ParentProps, Switch, createMemo } from "solid-js"
+import { For, type ParentProps, createMemo } from "solid-js"
 import { useLayout } from "@/context/layout"
 import { decode64 } from "@/utils/base64"
 import { ProjectTabs } from "@/components/project-tabs"
@@ -267,14 +267,12 @@ function Context() {
 
 export default function ProjectPage() {
   const params = useParams()
-  const location = useLocation()
   const layout = useLayout()
   const dir = createMemo(() => decode64(params.dir) ?? "")
   const project = createMemo(() =>
     layout.projects.list().find((item) => item.worktree === dir() || item.sandboxes?.includes(dir())),
   )
   const name = createMemo(() => (project()?.name ?? getFilename(dir())) || "Ideaspace project")
-  const view = createMemo(() => location.pathname.split("/").at(-1) ?? "workspace")
 
   return (
     <div class="size-full overflow-hidden bg-background-base flex flex-col">
@@ -298,22 +296,12 @@ export default function ProjectPage() {
 
       <ProjectTabs />
 
-      <div class="flex-1 overflow-auto p-4 md:p-5">
-        <Switch>
-          <Match when={view() === "workspace"}>
-            <Workspace />
-          </Match>
-          <Match when={view() === "tasks"}>
-            <Tasks />
-          </Match>
-          <Match when={view() === "agents"}>
-            <Agents />
-          </Match>
-          <Match when={view() === "context"}>
-            <Context />
-          </Match>
-        </Switch>
-      </div>
+      <div class="flex-1 overflow-auto p-4 md:p-5"></div>
     </div>
   )
 }
+
+void Workspace
+void Tasks
+void Agents
+void Context

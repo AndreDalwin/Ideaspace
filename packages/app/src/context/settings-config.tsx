@@ -4,6 +4,19 @@ import { createStore, produce } from "solid-js/store"
 import { useGlobalSDK } from "@/context/global-sdk"
 import { useGlobalSync } from "@/context/global-sync"
 
+function parse(input: unknown) {
+  if (typeof input !== "string") return input
+  try {
+    return JSON.parse(input)
+  } catch {
+    return input
+  }
+}
+
+function isRecord(input: unknown): input is Record<string, unknown> {
+  return !!input && typeof input === "object" && !Array.isArray(input)
+}
+
 export const { use: useSettingsConfig, provider: SettingsConfigProvider } = createSimpleContext({
   name: "SettingsConfig",
   init: () => {
@@ -14,6 +27,14 @@ export const { use: useSettingsConfig, provider: SettingsConfigProvider } = crea
     type McpInput = NonNullable<NonNullable<Parameters<typeof sdk.client.settings.mcp.create>[0]>["config"]>
     type Status = NonNullable<Awaited<ReturnType<typeof sdk.client.mcp.status>>["data"]>
     type Skill = NonNullable<Awaited<ReturnType<typeof sdk.client.app.skills>>["data"]>[number]
+
+    const record = <T extends Record<string, unknown>>(...list: unknown[]) => {
+      for (const item of list) {
+        const value = parse(item)
+        if (isRecord(value)) return value as T
+      }
+      return {} as T
+    }
 
     const [store, setStore] = createStore({
       mcp: {} as Mcp,
@@ -45,14 +66,15 @@ export const { use: useSettingsConfig, provider: SettingsConfigProvider } = crea
       setStore("error", undefined)
 
       try {
-        const [mcp, status, skills] = await Promise.all([
+        const [mcp, global, status, skills] = await Promise.all([
           sdk.client.settings.mcp.list({}, { throwOnError: true }),
+          sdk.client.global.config.get({ throwOnError: true }),
           sdk.client.mcp.status({}, { throwOnError: true }),
           sdk.client.app.skills({}, { throwOnError: true }),
         ])
 
-        setStore("mcp", mcp.data ?? ({} as Mcp))
-        setStore("status", status.data ?? ({} as Status))
+        setStore("mcp", record<Mcp>(mcp.data, global.data?.mcp))
+        setStore("status", record<Status>(status.data))
         setStore("skills", skills.data ?? [])
       } catch (err) {
         fail(err)
