@@ -201,9 +201,19 @@ export const SessionRoutes = lazy(() =>
         },
       }),
       validator("json", Session.create.schema.optional()),
+      validator(
+        "query",
+        z.object({
+          task: z.string().optional().meta({ description: "Task ID to associate with this session" }),
+        }),
+      ),
       async (c) => {
         const body = c.req.valid("json") ?? {}
-        const session = await Session.create(body)
+        const query = c.req.valid("query")
+        const session = await Session.create({
+          ...body,
+          taskID: query.task,
+        })
         return c.json(session)
       },
     )

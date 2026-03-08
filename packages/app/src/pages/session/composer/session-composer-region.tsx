@@ -10,6 +10,18 @@ import { SessionPermissionDock } from "@/pages/session/composer/session-permissi
 import { SessionQuestionDock } from "@/pages/session/composer/session-question-dock"
 import type { SessionComposerState } from "@/pages/session/composer/session-composer-state"
 import { SessionTodoDock } from "@/pages/session/composer/session-todo-dock"
+import type { Task } from "@/pages/tasks/state"
+
+function TaskBadge(props: { task: Task; onClear: () => void }) {
+  return (
+    <div class="flex items-center gap-2 px-3 py-1.5 mb-2 rounded-full bg-accent-primary/10 border border-accent-primary/30 text-13-medium text-text-strong w-fit">
+      <span class="truncate max-w-[200px]">{props.task.title}</span>
+      <button onClick={props.onClear} class="text-text-weak hover:text-text-strong">
+        ×
+      </button>
+    </div>
+  )
+}
 
 export function SessionComposerRegion(props: {
   state: SessionComposerState
@@ -38,6 +50,8 @@ export function SessionComposerRegion(props: {
   countMask?: number
   countMaskHeight?: number
   countWidthDuration?: number
+  activeTask?: Task | null
+  onClearTask?: () => void
 }) {
   const params = useParams()
   const prompt = usePrompt()
@@ -217,6 +231,9 @@ export function SessionComposerRegion(props: {
                 "margin-top": `${-36 * value()}px`,
               }}
             >
+              <Show when={props.activeTask} keyed>
+                {(task) => <TaskBadge task={task} onClear={() => props.onClearTask?.()} />}
+              </Show>
               <PromptInput
                 ref={props.inputRef}
                 newSessionWorktree={props.newSessionWorktree}

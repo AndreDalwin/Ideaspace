@@ -23,8 +23,10 @@ import { fn } from "@/util/fn"
 import { Command } from "../command"
 import { Snapshot } from "@/snapshot"
 import { WorkspaceContext } from "../control-plane/workspace-context"
+import * as TaskBoard from "../task-board"
 
-import type { Provider } from "@/provider/provider"
+import { Provider } from "@/provider/provider"
+import type { Provider as ProviderType } from "@/provider/provider"
 import { PermissionNext } from "@/permission/next"
 import { Global } from "@/global"
 import type { LanguageModelV2Usage } from "@ai-sdk/provider"
@@ -219,6 +221,7 @@ export namespace Session {
         parentID: Identifier.schema("session").optional(),
         title: z.string().optional(),
         permission: Info.shape.permission,
+        taskID: z.string().optional(),
       })
       .optional(),
     async (input) => {
@@ -227,6 +230,7 @@ export namespace Session {
         directory: Instance.directory,
         title: input?.title,
         permission: input?.permission,
+        taskID: input?.taskID,
       })
     },
   )
@@ -294,6 +298,7 @@ export namespace Session {
     parentID?: string
     directory: string
     permission?: PermissionNext.Ruleset
+    taskID?: string
   }) {
     const result: Info = {
       id: Identifier.descending("session", input.id),
@@ -319,6 +324,10 @@ export namespace Session {
         }),
       )
     })
+
+    // Inject task context if taskID is provided
+    if (input.taskID) await injectTaskContext(result.id, input.taskID)
+
     const cfg = await Config.get()
     if (!result.parentID && (Flag.IDEASPACE_AUTO_SHARE || cfg.share === "auto"))
       share(result.id).catch(() => {
@@ -328,6 +337,68 @@ export namespace Session {
       info: result,
     })
     return result
+  }
+
+  async function injectTaskContext(sessionID: string, taskID: string) {
+    try {
+      const board = await TaskBoard.read()
+      const task = board.tasks.find((t) => t.id === taskID)
+      if (!task) {
+        log.warn("task not found for session", { sessionID, taskID })
+        return
+      }
+
+      let taskContext = `I'm working on the task: "${task.title}"`
+
+      if (task.body) {
+        taskContext += `\n\nDetails:\n${task.body}`
+      }
+
+      if (task.deps.length > 0) {
+        taskContext += `\n\nDependencies: ${task.deps.join(", ")}`
+      }
+
+      taskContext += `\n\nCurrent status: ${task.status}`
+
+      if (task.status === "backlog") {
+        taskContext +=
+          "\n\nThis task is in the backlog. Please help me understand what needs to be done and plan the implementation."
+      } else if (task.status === "progress") {
+        taskContext += "\n\nThis task is in progress. Please help me implement the solution."
+      } else if (task.status === "review") {
+        taskContext += "\n\nThis task is in review. Please help me polish and finalize the implementation."
+      } else if (task.status === "done") {
+        taskContext += "\n\nThis task is complete. We can discuss what was accomplished or move on to related tasks."
+      }
+
+      taskContext +=
+        "\n\nYou have access to the update_task tool to move this task to a different status when appropriate."
+
+      const msg: MessageV2.User = {
+        id: Identifier.ascending("message"),
+        sessionID,
+        role: "user",
+        time: { created: Date.now() },
+        agent: "default",
+        model: await Provider.defaultModel(),
+      }
+
+      const part: MessageV2.TextPart = {
+        id: Identifier.ascending("part"),
+        messageID: msg.id,
+        sessionID,
+        type: "text",
+        text: taskContext,
+        synthetic: true,
+      }
+
+      await updateMessage(msg)
+      await updatePart(part)
+
+      log.info("injected task context", { sessionID, taskID, taskTitle: task.title })
+    } catch (e) {
+      log.error("failed to inject task context", { sessionID, taskID, error: e })
+    }
   }
 
   export function plan(input: { slug: string; time: { created: number } }) {
@@ -783,7 +854,7 @@ export namespace Session {
 
   export const getUsage = fn(
     z.object({
-      model: z.custom<Provider.Model>(),
+      model: z.custom<ProviderType.Model>(),
       usage: z.custom<LanguageModelV2Usage>(),
       metadata: z.custom<ProviderMetadata>().optional(),
     }),

@@ -110,8 +110,8 @@ const withFileDragImage = (event: DragEvent) => {
 
 const FileTreeNode = (
   p: ParentProps &
-    ComponentProps<"div"> &
-    ComponentProps<"button"> & {
+    Omit<ComponentProps<"div">, "onContextMenu"> &
+    Omit<ComponentProps<"button">, "onContextMenu"> & {
       node: FileNode
       level: number
       active?: string
@@ -120,6 +120,7 @@ const FileTreeNode = (
       kinds?: ReadonlyMap<string, Kind>
       marks?: Set<string>
       as?: "div" | "button"
+      onNodeContextMenu?: (e: MouseEvent, node: FileNode) => void
     },
 ) => {
   const [local, rest] = splitProps(p, [
@@ -131,6 +132,7 @@ const FileTreeNode = (
     "kinds",
     "marks",
     "as",
+    "onNodeContextMenu",
     "children",
     "class",
     "classList",
@@ -162,6 +164,7 @@ const FileTreeNode = (
         if (event.dataTransfer) event.dataTransfer.effectAllowed = "copy"
         withFileDragImage(event)
       }}
+      onContextMenu={local.onNodeContextMenu ? (e: MouseEvent) => local.onNodeContextMenu!(e, local.node) : undefined}
       {...rest}
     >
       {local.children}
@@ -202,6 +205,7 @@ export default function FileTree(props: {
   kinds?: ReadonlyMap<string, Kind>
   draggable?: boolean
   onFileClick?: (file: FileNode) => void
+  onContextMenu?: (e: MouseEvent, node: FileNode) => void
 
   _filter?: Filter
   _marks?: Set<string>
@@ -413,6 +417,7 @@ export default function FileTree(props: {
                       draggable={draggable()}
                       kinds={kinds()}
                       marks={marks()}
+                      onNodeContextMenu={props.onContextMenu}
                     >
                       <div class="size-4 flex items-center justify-center text-icon-weak">
                         <Icon name={expanded() ? "chevron-down" : "chevron-right"} size="small" />
@@ -441,6 +446,7 @@ export default function FileTree(props: {
                         active={props.active}
                         draggable={props.draggable}
                         onFileClick={props.onFileClick}
+                        onContextMenu={props.onContextMenu}
                         _filter={filter()}
                         _marks={marks()}
                         _deeps={deeps()}
@@ -460,6 +466,7 @@ export default function FileTree(props: {
                   draggable={draggable()}
                   kinds={kinds()}
                   marks={marks()}
+                  onNodeContextMenu={props.onContextMenu}
                   as="button"
                   type="button"
                   onClick={() => props.onFileClick?.(node)}

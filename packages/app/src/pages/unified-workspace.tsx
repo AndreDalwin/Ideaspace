@@ -11,6 +11,7 @@ import { createWorkspaceState } from "@/pages/workspace/state"
 import { CommentsProvider } from "@/context/comments"
 import { PromptProvider } from "@/context/prompt"
 import { TerminalProvider } from "@/context/terminal"
+import { FileProvider } from "@/context/file"
 import { TokenCounter } from "@/components/token-counter"
 import { ModeSwitcher, type WorkMode } from "@/components/mode-switcher"
 
@@ -65,12 +66,14 @@ export default function UnifiedWorkspacePage() {
             </div>
 
             <div class="flex-1 overflow-hidden">
-              <UnifiedWorkspace
-                document={<DocumentPanel planPath={selectedPlan() || undefined} />}
-                conversation={<ConversationPanel sessionId={sessionId()} onClearTask={clearTask} />}
-                context={<ContextPanel attachedFiles={[]} />}
-                mode={mode()}
-              />
+              <FileProvider>
+                <UnifiedWorkspace
+                  document={<DocumentPanel planPath={selectedPlan() || undefined} />}
+                  conversation={<ConversationPanel sessionId={sessionId()} onClearTask={clearTask} />}
+                  context={<ContextPanel attachedFiles={[]} />}
+                  mode={mode()}
+                />
+              </FileProvider>
             </div>
           </div>
         </CommentsProvider>

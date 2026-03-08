@@ -276,3 +276,5 @@
 - `cd packages/app && bun run typecheck && bun run test:unit && bun run build`
 - `cd packages/ideaspace && bun run build`
 - `bun run verify:desktop`
+
+- Added TokenCounter component with placeholder data and progress indicator, then placed it in the project header for quick context usage visibility.

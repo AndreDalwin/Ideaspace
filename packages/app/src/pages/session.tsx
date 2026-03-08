@@ -8,6 +8,7 @@ import {
   createMemo,
   createEffect,
   createComputed,
+  createSignal,
   on,
   onMount,
   untrack,
@@ -24,6 +25,8 @@ import { Button } from "@opencode-ai/ui/button"
 import { showToast } from "@opencode-ai/ui/toast"
 import { base64Encode, checksum } from "@opencode-ai/util/encode"
 import { useNavigate, useParams, useSearchParams } from "@solidjs/router"
+import { useSkills } from "@/context/skills"
+import { useContextBank } from "@/context/context-bank"
 import { NewSessionView, SessionHeader } from "@/components/session"
 import { useComments } from "@/context/comments"
 import { useGlobalSync } from "@/context/global-sync"
@@ -44,9 +47,21 @@ import { useSessionCommands } from "@/pages/session/use-session-commands"
 import { useSessionHashScroll } from "@/pages/session/use-session-hash-scroll"
 import { same } from "@/utils/same"
 import { formatServerError } from "@/utils/server-errors"
-import { ProjectTabs } from "@/components/project-tabs"
+import { CmdKHint } from "@/components/cmd-k-hint"
+import type { Task } from "@/pages/tasks/state"
 
 const emptyUserMessages: UserMessage[] = []
+
+function TaskBadge(props: { task: Task; onClear: () => void }) {
+  return (
+    <div class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-primary/10 border border-accent-primary/30 text-13-medium text-text-strong">
+      <span class="truncate max-w-[200px]">{props.task.title}</span>
+      <button onClick={props.onClear} class="text-text-weak hover:text-text-strong">
+        ×
+      </button>
+    </div>
+  )
+}
 
 type SessionHistoryWindowInput = {
   sessionID: () => string | undefined
@@ -268,7 +283,31 @@ export default function Page() {
   const sdk = useSDK()
   const prompt = usePrompt()
   const comments = useComments()
-  const [searchParams, setSearchParams] = useSearchParams<{ prompt?: string }>()
+  const [searchParams, setSearchParams] = useSearchParams<{ prompt?: string; task?: string; skill?: string }>()
+  const [activeTask, setActiveTask] = createSignal<Task | null>(null)
+  const skills = useSkills()
+  const ctx = useContextBank()
+  const [activeSkill, setActiveSkill] = createSignal<ReturnType<typeof skills.getSkill>>(undefined)
+
+  createEffect(() => {
+    const skillId = searchParams.skill
+    if (!skillId) {
+      setActiveSkill(undefined)
+      return
+    }
+
+    const skill = skills.getSkill(skillId)
+    if (!skill) return
+
+    setActiveSkill(skill)
+
+    const sessionId = params.id || "new"
+    skill.defaultContext.forEach((path) => {
+      ctx.actions.addToSession(sessionId, path)
+    })
+
+    setSearchParams({ ...searchParams, skill: undefined }, { replace: true })
+  })
 
   createEffect(() => {
     if (!untrack(() => prompt.ready())) return
@@ -282,6 +321,29 @@ export default function Page() {
     })
   })
 
+  createEffect(async () => {
+    const taskId = searchParams.task
+    if (!taskId) {
+      setActiveTask(null)
+      return
+    }
+
+    try {
+      const client = sdk.client as unknown as {
+        get: <T>(opts: { url: string }) => Promise<{ data?: T }>
+      }
+      const res = await client.get<{ tasks: Task[] }>({
+        url: "/task-board",
+      })
+      if (res.data) {
+        const task = res.data.tasks.find((t) => t.id === taskId)
+        if (task) setActiveTask(task)
+      }
+    } catch (err) {
+      console.error("Failed to load task:", err)
+    }
+  })
+
   const [ui, setUi] = createStore({
     git: false,
     pendingMessage: undefined as string | undefined,
@@ -291,6 +353,13 @@ export default function Page() {
       bottom: true,
     },
   })
+
+  const clearTask = () => {
+    const url = new URL(window.location.href)
+    url.searchParams.delete("task")
+    url.searchParams.delete("mode")
+    navigate(url.pathname + url.search, { replace: true })
+  }
 
   const composer = createSessionComposerState()
 
@@ -1244,8 +1313,24 @@ export default function Page() {
 
   return (
     <div class="relative bg-background-base size-full overflow-hidden flex flex-col">
-      <ProjectTabs />
       <SessionHeader />
+      <div class="flex items-center justify-end gap-2 px-4 py-2">
+        <Button
+          variant="secondary"
+          size="small"
+          onClick={() => {
+            const base = params.dir ? `/${params.dir}` : ""
+            navigate(`${base}/session`)
+          }}
+        >
+          New session
+        </Button>
+        <Show when={activeTask()}>
+          <Button variant="ghost" size="small" onClick={clearTask}>
+            Clear context
+          </Button>
+        </Show>
+      </div>
       <div class="flex-1 min-h-0 flex flex-col md:flex-row">
         <SessionMobileTabs
           open={!isDesktop() && !!params.id}
@@ -1354,7 +1439,10 @@ export default function Page() {
             setPromptDockRef={(el) => {
               promptDock = el
             }}
+            activeTask={activeTask()}
+            onClearTask={clearTask}
           />
+          <CmdKHint />
 
           <Show when={desktopReviewOpen()}>
             <ResizeHandle

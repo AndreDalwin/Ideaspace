@@ -7,11 +7,12 @@ import { MarkedProvider } from "@opencode-ai/ui/context/marked"
 import { Font } from "@opencode-ai/ui/font"
 import { ThemeProvider } from "@opencode-ai/ui/theme"
 import { MetaProvider } from "@solidjs/meta"
-import { BaseRouterProps, Navigate, Route, Router } from "@solidjs/router"
+import { BaseRouterProps, Navigate, Route, Router, useParams } from "@solidjs/router"
 import { Component, ErrorBoundary, type JSX, lazy, type ParentProps, Show, Suspense } from "solid-js"
 
 import { CommandProvider } from "@/context/command"
-import { CommentsProvider } from "@/context/comments"
+import { ContextBankProvider } from "@/context/context-bank"
+import { SkillsProvider } from "@/context/skills"
 import { FileProvider } from "@/context/file"
 import { GlobalSDKProvider } from "@/context/global-sdk"
 import { GlobalSyncProvider } from "@/context/global-sync"
@@ -22,10 +23,8 @@ import { ModelsProvider } from "@/context/models"
 import { NotificationProvider } from "@/context/notification"
 import { PermissionProvider } from "@/context/permission"
 import { usePlatform } from "@/context/platform"
-import { PromptProvider } from "@/context/prompt"
 import { type ServerConnection, ServerProvider, useServer } from "@/context/server"
 import { SettingsProvider } from "@/context/settings"
-import { TerminalProvider } from "@/context/terminal"
 import DirectoryLayout from "@/pages/directory-layout"
 import Layout from "@/pages/layout"
 import { ErrorPage } from "./pages/error"
@@ -34,20 +33,19 @@ import { Dynamic } from "solid-js/web"
 const Home = lazy(() => import("@/pages/home"))
 const Project = lazy(() => import("@/pages/project"))
 const Session = lazy(() => import("@/pages/session"))
+const Agents = lazy(() => import("@/pages/agents"))
+const UnifiedWorkspace = lazy(() => import("@/pages/unified-workspace"))
+const V3Layout = lazy(() => import("@/layouts/v3-layout"))
+const V3BlankWorkspace = lazy(() => import("@/components/v3-blank-workspace"))
+const V3Tasks = lazy(() => import("@/pages/v3-tasks"))
+const SkillsPage = lazy(() => import("@/pages/skills"))
+const SkillEditorPage = lazy(() => import("@/pages/skill-editor"))
 const Loading = () => <div class="size-full" />
 
 const HomeRoute = () => (
   <Suspense fallback={<Loading />}>
     <Home />
   </Suspense>
-)
-
-const SessionRoute = () => (
-  <SessionProviders>
-    <Suspense fallback={<Loading />}>
-      <Session />
-    </Suspense>
-  </SessionProviders>
 )
 
 const ProjectRoute = () => (
@@ -58,7 +56,60 @@ const ProjectRoute = () => (
   </FileProvider>
 )
 
-const SessionIndexRoute = () => <Navigate href="workspace" />
+const AgentsRoute = () => (
+  <AgentsProvider>
+    <Suspense fallback={<Loading />}>
+      <Agents />
+    </Suspense>
+  </AgentsProvider>
+)
+
+const UnifiedWorkspaceRoute = () => (
+  <FileProvider>
+    <Suspense fallback={<Loading />}>
+      <UnifiedWorkspace />
+    </Suspense>
+  </FileProvider>
+)
+
+const V3Route = () => (
+  <Suspense fallback={<Loading />}>
+    <V3Layout>
+      <V3BlankWorkspace />
+    </V3Layout>
+  </Suspense>
+)
+
+const SkillsRoute = () => (
+  <Suspense fallback={<Loading />}>
+    <V3Layout>
+      <SkillsPage />
+    </V3Layout>
+  </Suspense>
+)
+
+const V3TasksRoute = () => (
+  <Suspense fallback={<Loading />}>
+    <V3Layout>
+      <V3Tasks />
+    </V3Layout>
+  </Suspense>
+)
+
+const SkillEditorRoute = () => (
+  <Suspense fallback={<Loading />}>
+    <V3Layout>
+      <SkillEditorPage />
+    </V3Layout>
+  </Suspense>
+)
+
+const SessionIndexRoute = () => {
+  const params = useParams()
+  const dir = params.dir
+  const target = dir ? `/${dir}/session` : "/session"
+  return <Navigate href={target} />
+}
 
 function UiI18nBridge(props: ParentProps) {
   const language = useLanguage()
@@ -89,28 +140,20 @@ function AppShellProviders(props: ParentProps) {
         <LayoutProvider>
           <NotificationProvider>
             <ModelsProvider>
-              <CommandProvider>
-                <HighlightsProvider>
-                  <Layout>{props.children}</Layout>
-                </HighlightsProvider>
-              </CommandProvider>
+              <ContextBankProvider>
+                <SkillsProvider>
+                  <CommandProvider>
+                    <HighlightsProvider>
+                      <Layout>{props.children}</Layout>
+                    </HighlightsProvider>
+                  </CommandProvider>
+                </SkillsProvider>
+              </ContextBankProvider>
             </ModelsProvider>
           </NotificationProvider>
         </LayoutProvider>
       </PermissionProvider>
     </SettingsProvider>
-  )
-}
-
-function SessionProviders(props: ParentProps) {
-  return (
-    <TerminalProvider>
-      <FileProvider>
-        <PromptProvider>
-          <CommentsProvider>{props.children}</CommentsProvider>
-        </PromptProvider>
-      </FileProvider>
-    </TerminalProvider>
   )
 }
 
@@ -169,13 +212,19 @@ export function AppInterface(props: {
               root={(routerProps) => <RouterRoot appChildren={props.children}>{routerProps.children}</RouterRoot>}
             >
               <Route path="/" component={HomeRoute} />
+              <Route path="/agents" component={AgentsRoute} />
+              <Route path="/skills" component={SkillsRoute} />
+              <Route path="/skills/new" component={SkillEditorRoute} />
+              <Route path="/skills/:id/edit" component={SkillEditorRoute} />
+              <Route path="/tasks" component={V3TasksRoute} />
               <Route path="/:dir" component={DirectoryLayout}>
-                <Route path="/" component={SessionIndexRoute} />
-                <Route path="/workspace" component={ProjectRoute} />
-                <Route path="/tasks" component={ProjectRoute} />
+                <Route path="/" component={UnifiedWorkspaceRoute} />
+                <Route path="/workspace" component={UnifiedWorkspaceRoute} />
+                <Route path="/tasks" component={UnifiedWorkspaceRoute} />
                 <Route path="/agents" component={ProjectRoute} />
                 <Route path="/context" component={ProjectRoute} />
-                <Route path="/session/:id?" component={SessionRoute} />
+                <Route path="/session/:id?" component={UnifiedWorkspaceRoute} />
+                <Route path="/v3" component={V3Route} />
               </Route>
             </Dynamic>
           </GlobalSyncProvider>

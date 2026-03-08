@@ -2,11 +2,11 @@ import { A, useLocation, useParams } from "@solidjs/router"
 import { For } from "solid-js"
 
 const tabs = [
+  { id: "session", label: "Session" },
   { id: "workspace", label: "Workspace" },
   { id: "tasks", label: "Tasks" },
   { id: "agents", label: "Agents" },
   { id: "context", label: "Context" },
-  { id: "session", label: "Session" },
 ] as const
 
 export function ProjectTabs() {

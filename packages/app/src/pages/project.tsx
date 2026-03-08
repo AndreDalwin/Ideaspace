@@ -1,11 +1,33 @@
 import { A, useLocation, useParams } from "@solidjs/router"
 import { getFilename } from "@opencode-ai/util/path"
-import { Match, type ParentProps, Switch, createMemo } from "solid-js"
+import { lazy, Match, type ParentProps, Switch, createMemo, Suspense } from "solid-js"
 import { useLayout } from "@/context/layout"
 import { decode64 } from "@/utils/base64"
 import { ProjectTabs } from "@/components/project-tabs"
 import Workspace from "./workspace"
 import Tasks from "./tasks"
+import { CommentsProvider } from "@/context/comments"
+import { PromptProvider } from "@/context/prompt"
+import { TerminalProvider } from "@/context/terminal"
+import { TokenCounter } from "@/components/token-counter"
+
+const Session = lazy(() => import("./session"))
+
+const Loading = () => <div class="size-full" />
+
+function SessionView() {
+  return (
+    <TerminalProvider>
+      <PromptProvider>
+        <CommentsProvider>
+          <Suspense fallback={<Loading />}>
+            <Session />
+          </Suspense>
+        </CommentsProvider>
+      </PromptProvider>
+    </TerminalProvider>
+  )
+}
 
 function Pane(props: ParentProps<{ title: string; note: string }>) {
   return (
@@ -56,7 +78,12 @@ export default function ProjectPage() {
     layout.projects.list().find((item) => item.worktree === dir() || item.sandboxes?.includes(dir())),
   )
   const name = createMemo(() => (project()?.name ?? getFilename(dir())) || "Ideaspace project")
-  const view = createMemo(() => location.pathname.split("/").at(-1) ?? "workspace")
+  const view = createMemo(() => {
+    const segment = location.pathname.split("/")[2]
+    if (segment && segment !== "") return segment
+    return "session"
+  })
+  const tabbed = createMemo(() => view() === "agents" || view() === "context")
 
   return (
     <div class="size-full overflow-hidden bg-background-base flex flex-col">
@@ -69,19 +96,25 @@ export default function ProjectPage() {
               Desktop-first project shell for planning, tasks, agent visibility, shared context, and AI sessions.
             </p>
           </div>
-          <A
-            href={`/${params.dir}/session`}
-            class="inline-flex h-11 items-center justify-center rounded-2xl bg-accent-primary px-4 text-13-medium text-black"
-          >
-            Open AI session
-          </A>
+          <div class="flex items-center gap-3">
+            <TokenCounter sessionId={params.id} />
+            <A
+              href={`/${params.dir}/session`}
+              class="inline-flex h-11 items-center justify-center rounded-2xl bg-accent-primary px-4 text-13-medium text-black"
+            >
+              Open AI session
+            </A>
+          </div>
         </div>
       </div>
 
-      <ProjectTabs />
+      {tabbed() && <ProjectTabs />}
 
       <div class="flex-1 overflow-auto p-4 md:p-5">
         <Switch>
+          <Match when={view() === "session"}>
+            <SessionView />
+          </Match>
           <Match when={view() === "workspace"}>
             <Workspace />
           </Match>
