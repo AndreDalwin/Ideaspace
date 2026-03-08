@@ -61,7 +61,7 @@ export function UnifiedWorkspace(props: UnifiedWorkspaceProps) {
     <div class="flex h-full w-full overflow-hidden bg-background-base">
       <Show when={showDocument()}>
         <div
-          class="flex flex-col border-r border-border-weak-base overflow-hidden shrink-0 motion-safe:transition-all duration-300 ease-out"
+          class="flex flex-col h-full border-r border-border-weak-base overflow-hidden shrink-0 motion-safe:transition-all duration-300 ease-out"
           style={{ width: `${docWidth()}px` }}
         >
           <div class="flex items-center justify-between px-3 py-2 border-b border-border-weak-base bg-background-base">
@@ -135,7 +135,7 @@ export function UnifiedWorkspace(props: UnifiedWorkspaceProps) {
         />
 
         <div
-          class="flex flex-col border-l border-border-weak-base overflow-hidden shrink-0 motion-safe:transition-all duration-300 ease-out"
+          class="flex flex-col h-full border-l border-border-weak-base overflow-hidden shrink-0 motion-safe:transition-all duration-300 ease-out"
           style={{ width: `${contextWidth()}px` }}
         >
           <div class="flex items-center justify-between px-3 py-2 border-b border-border-weak-base bg-background-base">

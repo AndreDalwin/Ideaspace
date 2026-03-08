@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "@solidjs/router"
 import { SDKProvider } from "@/context/sdk"
 import { SyncProvider, useSync } from "@/context/sync"
 import { LocalProvider } from "@/context/local"
+import { FileProvider } from "@/context/file"
 
 import { DataProvider } from "@opencode-ai/ui/context"
 import { decode64 } from "@/utils/base64"
@@ -52,7 +53,9 @@ export default function Layout(props: ParentProps) {
     <Show when={directory()}>
       <SDKProvider directory={directory}>
         <SyncProvider>
-          <DirectoryDataProvider directory={directory()}>{props.children}</DirectoryDataProvider>
+          <DirectoryDataProvider directory={directory()}>
+            <FileProvider>{props.children}</FileProvider>
+          </DirectoryDataProvider>
         </SyncProvider>
       </SDKProvider>
     </Show>

@@ -4,6 +4,8 @@ import { Button } from "@opencode-ai/ui/button"
 import { IconButton } from "@opencode-ai/ui/icon-button"
 import { ScrollView } from "@opencode-ai/ui/scroll-view"
 import { Markdown } from "@opencode-ai/ui/markdown"
+import { Icon } from "@opencode-ai/ui/icon"
+import { Spinner } from "@opencode-ai/ui/spinner"
 import { createWorkspaceState } from "./state"
 import { useSDK } from "../../context/sdk"
 import { CmdKHint } from "@/components/cmd-k-hint"
@@ -62,7 +64,7 @@ export default function Workspace() {
   return (
     <div class="flex h-full flex-col gap-4">
       <div class="flex-1 grid gap-5 xl:grid-cols-[280px_1fr]">
-        <div class="flex flex-col gap-3">
+        <div class="flex flex-col gap-3 h-full min-h-0">
           <div class="flex items-center justify-between mb-3">
             <h3 class="text-14-semibold text-text-strong">Plans</h3>
             <div class="flex items-center gap-2">
@@ -85,26 +87,51 @@ export default function Workspace() {
           <ScrollView class="flex-1 border border-border-weak-base rounded-xl">
             <div class="p-2">
               <Show when={planFiles().length === 0}>
-                <div class="p-4 text-13-regular text-text-weak text-center">
-                  No plans yet. Create one to get started.
+                <div class="p-6 flex flex-col items-center gap-3 text-center">
+                  <div class="w-10 h-10 rounded-full bg-background-stronger flex items-center justify-center">
+                    <Icon name="folder" class="size-5 text-text-weak" />
+                  </div>
+                  <div>
+                    <div class="text-13-regular text-text-strong">No plans yet</div>
+                    <div class="text-12-regular text-text-weak mt-0.5">Start by creating your first plan</div>
+                  </div>
+                  <A
+                    href={`/${params.dir}/session?prompt=${plannerHeaderPrompt}`}
+                    class="inline-flex h-8 items-center justify-center rounded-lg bg-accent-primary px-3 text-12-medium text-black mt-1"
+                  >
+                    Start Planner
+                  </A>
                 </div>
               </Show>
 
-              <For each={planFiles()}>
-                {(plan) => (
-                  <button
-                    class={`w-full text-left px-3 py-2 rounded-lg text-13-regular transition-colors ${
-                      workspace.selected() === plan.path
-                        ? "bg-accent-primary/10 text-text-strong"
-                        : "text-text-weak hover:bg-background-stronger"
-                    }`}
-                    onClick={() => workspace.setSelected(plan.path)}
-                  >
-                    <div class="truncate">{plan.name}</div>
-                    <div class="text-11-regular text-text-weaker">{new Date(plan.modified).toLocaleDateString()}</div>
-                  </button>
-                )}
-              </For>
+              <div class="flex flex-col gap-1">
+                <For each={planFiles()}>
+                  {(plan) => {
+                    const selected = workspace.selected() === plan.path
+                    return (
+                      <button
+                        class={`w-full text-left px-3 py-2.5 rounded-lg text-13-regular transition-all ${
+                          selected
+                            ? "bg-accent-primary/10 text-text-strong border-l-2 border-accent-primary"
+                            : "text-text-weak hover:bg-background-stronger hover:text-text-base border-l-2 border-transparent"
+                        }`}
+                        onClick={() => workspace.setSelected(plan.path)}
+                      >
+                        <div class="flex items-center gap-2">
+                          <Icon
+                            name="folder"
+                            class={`size-4 shrink-0 ${selected ? "text-accent-primary" : "text-text-weaker"}`}
+                          />
+                          <div class="truncate flex-1">{plan.name}</div>
+                        </div>
+                        <div class="text-11-regular text-text-weaker ml-6">
+                          {new Date(plan.modified).toLocaleDateString()}
+                        </div>
+                      </button>
+                    )
+                  }}
+                </For>
+              </div>
             </div>
           </ScrollView>
 
@@ -128,7 +155,14 @@ export default function Workspace() {
               disabled={!workspace.selected() || converting()}
               class="w-full"
             >
-              {converting() ? "Converting..." : "Convert to Tasks"}
+              {converting() ? (
+                <>
+                  <Spinner class="size-4 mr-2" />
+                  Converting...
+                </>
+              ) : (
+                "Convert to Tasks"
+              )}
             </Button>
             <Show when={lastResult()}>
               <div class="text-12-regular text-text-weak text-center">
@@ -138,7 +172,7 @@ export default function Workspace() {
           </div>
         </div>
 
-        <div class="flex flex-col border border-border-weak-base rounded-xl overflow-hidden">
+        <div class="flex flex-col h-full border border-border-weak-base rounded-xl overflow-hidden">
           <div class="flex items-center justify-between px-4 py-3 border-b border-border-weak-base">
             <h3 class="text-14-semibold text-text-strong">{selectedFileName()}</h3>
           </div>
@@ -147,8 +181,22 @@ export default function Workspace() {
             <Show
               when={contentText()}
               fallback={
-                <div class="flex h-full items-center justify-center text-13-regular text-text-weak">
-                  Select a plan to preview
+                <div class="flex h-full flex-col items-center justify-center gap-3 text-center">
+                  <div class="w-12 h-12 rounded-full bg-background-stronger flex items-center justify-center">
+                    <Icon name="eye" class="size-6 text-text-weak" />
+                  </div>
+                  <div>
+                    <div class="text-13-regular text-text-strong">Select a plan to preview</div>
+                    <div class="text-12-regular text-text-weaker mt-1">
+                      Or start a new planner session to create one
+                    </div>
+                  </div>
+                  <A
+                    href={`/${params.dir}/session?prompt=${plannerHeaderPrompt}`}
+                    class="inline-flex h-8 items-center justify-center rounded-lg border border-border-strong-base px-3 text-12-medium text-text-strong mt-2"
+                  >
+                    Start Planner
+                  </A>
                 </div>
               }
             >

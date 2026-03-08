@@ -74,35 +74,43 @@ const UnifiedWorkspaceRoute = () => (
 )
 
 const V3Route = () => (
-  <Suspense fallback={<Loading />}>
-    <V3Layout>
-      <V3BlankWorkspace />
-    </V3Layout>
-  </Suspense>
+  <FileProvider>
+    <Suspense fallback={<Loading />}>
+      <V3Layout>
+        <V3BlankWorkspace />
+      </V3Layout>
+    </Suspense>
+  </FileProvider>
 )
 
 const SkillsRoute = () => (
-  <Suspense fallback={<Loading />}>
-    <V3Layout>
-      <SkillsPage />
-    </V3Layout>
-  </Suspense>
+  <FileProvider>
+    <Suspense fallback={<Loading />}>
+      <V3Layout>
+        <SkillsPage />
+      </V3Layout>
+    </Suspense>
+  </FileProvider>
 )
 
 const V3TasksRoute = () => (
-  <Suspense fallback={<Loading />}>
-    <V3Layout>
-      <V3Tasks />
-    </V3Layout>
-  </Suspense>
+  <FileProvider>
+    <Suspense fallback={<Loading />}>
+      <V3Layout>
+        <V3Tasks />
+      </V3Layout>
+    </Suspense>
+  </FileProvider>
 )
 
 const SkillEditorRoute = () => (
-  <Suspense fallback={<Loading />}>
-    <V3Layout>
-      <SkillEditorPage />
-    </V3Layout>
-  </Suspense>
+  <FileProvider>
+    <Suspense fallback={<Loading />}>
+      <V3Layout>
+        <SkillEditorPage />
+      </V3Layout>
+    </Suspense>
+  </FileProvider>
 )
 
 const SessionIndexRoute = () => {
