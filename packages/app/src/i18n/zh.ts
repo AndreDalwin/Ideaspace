@@ -738,6 +738,8 @@ export const dict = {
 
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "MCP 设置将在此处可配置。",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
 
   "settings.permissions.title": "权限",
   "settings.permissions.description": "控制服务器默认可以使用哪些工具。",

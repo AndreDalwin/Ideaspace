@@ -682,6 +682,8 @@ export const dict = {
   "settings.commands.description": "Befehlseinstellungen können hier konfiguriert werden.",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "MCP-Einstellungen können hier konfiguriert werden.",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
   "settings.permissions.title": "Berechtigungen",
   "settings.permissions.description": "Steuern Sie, welche Tools der Server standardmäßig verwenden darf.",
   "settings.permissions.section.tools": "Tools",

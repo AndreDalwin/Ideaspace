@@ -665,6 +665,8 @@ export const dict = {
   "settings.commands.description": "ستكون إعدادات الأمر قابلة للتكوين هنا.",
   "settings.mcp.title": "MCP",
   "settings.mcp.description": "ستكون إعدادات MCP قابلة للتكوين هنا.",
+  "settings.skills.title": "Skills",
+  "settings.skills.description": "Manage agent skills and capabilities.",
   "settings.permissions.title": "الأذونات",
   "settings.permissions.description": "تحكم في الأدوات التي يمكن للخادم استخدامها بشكل افتراضي.",
   "settings.permissions.section.tools": "الأدوات",

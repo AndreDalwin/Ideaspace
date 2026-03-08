@@ -10,11 +10,19 @@ import { iife } from "@/util/iife"
 export const SkillTool = Tool.define("skill", async (ctx) => {
   const skills = await Skill.all()
 
-  // Filter skills by agent permissions if agent provided
-  const agent = ctx?.agent
-  const accessibleSkills = agent
+  const agentInfo = ctx?.agent
+  const skillsAllowlist = agentInfo
+    ? agentInfo.skills !== undefined
+      ? agentInfo.skills
+      : agentInfo.mode === "subagent"
+        ? []
+        : undefined
+    : undefined
+
+  const accessibleSkills = agentInfo
     ? skills.filter((skill) => {
-        const rule = PermissionNext.evaluate("skill", skill.name, agent.permission)
+        if (skillsAllowlist !== undefined && !skillsAllowlist.includes(skill.name)) return false
+        const rule = PermissionNext.evaluate("skill", skill.name, agentInfo.permission)
         return rule.action !== "deny"
       })
     : skills

@@ -1,0 +1,1 @@
+- `cd packages/ideaspace && bun test --timeout 30000` still fails in this branch due unrelated pre-existing failures in legacy skill, tui config, provider, and plugin auth tests. The new targeted settings test file passes.

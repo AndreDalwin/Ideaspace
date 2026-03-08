@@ -10,7 +10,6 @@ import { Button } from "@opencode-ai/ui/button"
 import { TextField } from "@opencode-ai/ui/text-field"
 import { Select } from "@opencode-ai/ui/select"
 import { RadioGroup } from "@opencode-ai/ui/radio-group"
-import { Checkbox } from "@opencode-ai/ui/checkbox"
 import { Icon } from "@opencode-ai/ui/icon"
 import { Dialog } from "@opencode-ai/ui/dialog"
 import { Switch } from "@opencode-ai/ui/switch"
@@ -47,6 +46,11 @@ type MCP = {
   name: string
   status: string
   type: "local" | "remote"
+}
+
+type Skill = {
+  name: string
+  description: string
 }
 
 type ModelOption = {
@@ -97,11 +101,6 @@ function list(value: string) {
 function sameMap(a: Record<string, PermissionLevel>, b: Record<string, PermissionLevel>) {
   const keys = Array.from(new Set([...Object.keys(a), ...Object.keys(b)])).sort()
   return keys.every((key) => a[key] === b[key])
-}
-
-function sameSet(a: Set<string>, b: Set<string>) {
-  if (a.size !== b.size) return false
-  return [...a].every((item) => b.has(item))
 }
 
 function PermissionRow(props: {
@@ -163,14 +162,19 @@ export const AgentDetail: Component = () => {
   const [expanded, setExpanded] = createSignal(true)
   const [prompt, setPrompt] = createSignal("")
   const [mcps, setMcps] = createSignal<MCP[]>([])
-  const [selectedMcps, setSelectedMcps] = createSignal<Set<string>>(new Set())
-  const [initialMcps, setInitialMcps] = createSignal<Set<string>>(new Set())
+  const [skills, setSkills] = createSignal<Skill[]>([])
   const [store, setStore] = createStore({
     isEditing: false,
     model: "",
     variant: "",
     steps: "",
     hidden: false,
+    mcpRule: "allow" as PermissionLevel,
+    mcpItem: {} as Record<string, PermissionLevel>,
+    mcpExtra: [] as string[],
+    skillRule: "allow" as PermissionLevel,
+    skillItem: {} as Record<string, PermissionLevel>,
+    skillExtra: [] as string[],
     taskRule: "deny" as PermissionLevel,
     taskItem: {} as Record<string, PermissionLevel>,
     perms: {
@@ -202,6 +206,12 @@ export const AgentDetail: Component = () => {
     variant: "",
     steps: "",
     hidden: false,
+    mcpRule: "allow" as PermissionLevel,
+    mcpItem: {} as Record<string, PermissionLevel>,
+    mcpExtra: [] as string[],
+    skillRule: "allow" as PermissionLevel,
+    skillItem: {} as Record<string, PermissionLevel>,
+    skillExtra: [] as string[],
     taskRule: "deny" as PermissionLevel,
     taskItem: {} as Record<string, PermissionLevel>,
     perms: {
@@ -260,24 +270,28 @@ export const AgentDetail: Component = () => {
   const agent = () => {
     const name = selected()
     if (!name) return selectedAgent()
-    const fromList = agents.get(name)
-    if (fromList) {
-      setSelectedAgent(fromList)
-      return fromList
-    }
-    return selectedAgent()
+    return agents.get(name) ?? selectedAgent()
   }
 
   onMount(async () => {
-    const result = await sdk.client.mcp.status()
-    if (result.data) {
-      const mcpList: MCP[] = Object.entries(result.data).flatMap(([name, info]) => {
+    const [mcpResult, skillsResult] = await Promise.all([sdk.client.mcp.status(), sdk.client.app.skills()])
+
+    if (mcpResult.data) {
+      const mcpList: MCP[] = Object.entries(mcpResult.data).flatMap(([name, info]) => {
         if (!info || typeof info !== "object") return []
         const status = "status" in info && typeof info.status === "string" ? info.status : "unknown"
         const type = "type" in info && info.type === "remote" ? "remote" : "local"
         return [{ name, status, type }]
       })
       setMcps(mcpList)
+    }
+
+    if (skillsResult.data) {
+      const skillList: Skill[] = skillsResult.data.map((s: { name: string; description: string }) => ({
+        name: s.name,
+        description: s.description,
+      }))
+      setSkills(skillList)
     }
 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -289,17 +303,62 @@ export const AgentDetail: Component = () => {
     onCleanup(() => window.removeEventListener("beforeunload", handleBeforeUnload))
   })
 
-  const toggleMcp = (name: string) => {
-    setSelectedMcps((prev) => {
-      const next = new Set(prev)
-      if (next.has(name)) {
-        next.delete(name)
-      } else {
-        next.add(name)
-      }
-      return next
-    })
+  const setMcpRule = (value: PermissionLevel) => {
+    setStore("mcpRule", value)
     setStore("isEditing", true)
+  }
+
+  const setSkillRule = (value: PermissionLevel) => {
+    setStore("skillRule", value)
+    setStore("isEditing", true)
+  }
+
+  const setMcpItem = (name: string, value: PermissionLevel) => {
+    setStore("mcpItem", name, value)
+    setStore("isEditing", true)
+  }
+
+  const setSkillItem = (name: string, value: PermissionLevel) => {
+    setStore("skillItem", name, value)
+    setStore("isEditing", true)
+  }
+
+  const allowedMcps = () => mcps().map((item) => item.name)
+
+  const allowedSkills = () => skills().map((item) => item.name)
+
+  const overrides = (all: string[], picked: string[], fallback: PermissionLevel) => {
+    const allow = new Set(picked)
+    const deny = Object.fromEntries(all.filter((item) => !allow.has(item)).map((item) => [item, "deny"] as const))
+    if (fallback === "allow") return deny
+    return Object.fromEntries(all.filter((item) => allow.has(item)).map((item) => [item, "allow"] as const))
+  }
+
+  const accessState = (all: string[], mode: FormState["mode"], value: unknown) => {
+    const picked = Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : undefined
+    if (!picked) {
+      const rule: PermissionLevel = mode === "subagent" ? "deny" : "allow"
+      return { rule, item: {} as Record<string, PermissionLevel>, extra: [] as string[] }
+    }
+
+    const extra = picked.filter((item) => !all.includes(item))
+    const known = picked.filter((item) => all.includes(item))
+
+    if (known.length === 0)
+      return { rule: "deny" as PermissionLevel, item: {} as Record<string, PermissionLevel>, extra }
+    if (known.length === all.length)
+      return { rule: "allow" as PermissionLevel, item: {} as Record<string, PermissionLevel>, extra }
+
+    const denied = all.length - known.length
+    if (denied <= known.length) {
+      return { rule: "allow" as PermissionLevel, item: overrides(all, known, "allow"), extra }
+    }
+
+    return { rule: "deny" as PermissionLevel, item: overrides(all, known, "deny"), extra }
+  }
+
+  const picked = (all: string[], rule: PermissionLevel, item: Record<string, PermissionLevel>) => {
+    return all.filter((name) => (item[name] ?? rule) === "allow")
   }
 
   const validateName = (name: string, currentName: string): string | undefined => {
@@ -327,6 +386,7 @@ export const AgentDetail: Component = () => {
 
     setForm("description", value)
     setForm("isEditing", true)
+    setStore("isEditing", true)
   }
 
   const handleModeChange = (option: { value: string; label: string } | undefined) => {
@@ -336,6 +396,7 @@ export const AgentDetail: Component = () => {
     const mode = option.value as "primary" | "subagent" | "all"
     setForm("mode", mode)
     setForm("isEditing", true)
+    setStore("isEditing", true)
     if (mode !== "subagent") setStore("hidden", false)
   }
 
@@ -375,7 +436,11 @@ export const AgentDetail: Component = () => {
 
   const loadAgentData = (a: Agent) => {
     const cfg = agents.getConfig(a.name)
-    const mcp = Array.isArray(cfg?.mcps) ? cfg.mcps.filter((item): item is string => typeof item === "string") : []
+    const mode = a.mode ?? "primary"
+
+    const rawMcps = (cfg as Record<string, unknown> | undefined)?.mcps
+    const rawSkills = (cfg as Record<string, unknown> | undefined)?.skills
+
     const read = permissionState(a.permission, "read")
     const edit = permissionState(a.permission, "edit")
     const imageGenerate = permissionState(a.permission, "image_generate")
@@ -387,12 +452,24 @@ export const AgentDetail: Component = () => {
     const next = {
       name: a.name,
       description: a.description ?? "",
-      mode: a.mode ?? "primary",
+      mode: mode,
       prompt: cfg?.prompt ?? a.prompt ?? "",
       model: cfg?.model ?? (a.model ? `${a.model.providerID}/${a.model.modelID}` : ""),
       variant: cfg?.variant ?? a.variant ?? "",
       steps: cfg?.steps?.toString() ?? a.steps?.toString() ?? "",
       hidden: (cfg?.hidden ?? a.hidden) === true,
+      ...(() => {
+        const mcp = accessState(allowedMcps(), mode, rawMcps)
+        const skill = accessState(allowedSkills(), mode, rawSkills)
+        return {
+          mcpRule: mcp.rule,
+          mcpItem: mcp.item,
+          mcpExtra: mcp.extra,
+          skillRule: skill.rule,
+          skillItem: skill.item,
+          skillExtra: skill.extra,
+        }
+      })(),
       taskRule: task.rule,
       taskItem: task.item,
       perms: {
@@ -422,6 +499,12 @@ export const AgentDetail: Component = () => {
     setStore("variant", next.variant)
     setStore("steps", next.steps)
     setStore("hidden", next.hidden)
+    setStore("mcpRule", next.mcpRule)
+    setStore("mcpItem", next.mcpItem)
+    setStore("mcpExtra", next.mcpExtra)
+    setStore("skillRule", next.skillRule)
+    setStore("skillItem", next.skillItem)
+    setStore("skillExtra", next.skillExtra)
     setStore("taskRule", next.taskRule)
     setStore("taskItem", next.taskItem)
 
@@ -438,15 +521,13 @@ export const AgentDetail: Component = () => {
     })
     setBase(next)
 
-    const selectedMcps = new Set<string>(mcp)
-    setSelectedMcps(selectedMcps)
-    setInitialMcps(new Set(selectedMcps))
     setStore("isEditing", false)
   }
 
   const handleSelect = (a: Agent) => {
     if (a.name === selected()) return
     if (!confirmNavigate()) return
+    setSelectedAgent(a)
     setSelected(a.name)
     loadAgentData(a)
   }
@@ -486,10 +567,6 @@ export const AgentDetail: Component = () => {
       if (store.steps !== base.steps) cfg.steps = steps
       if (form.mode === "subagent" && store.hidden !== base.hidden) cfg.hidden = store.hidden
       if (form.mode !== "subagent" && base.hidden) cfg.hidden = undefined
-
-      if (selectedMcps().size !== initialMcps().size || ![...selectedMcps()].every((item) => initialMcps().has(item))) {
-        cfg.mcps = Array.from(selectedMcps())
-      }
 
       const task = Object.fromEntries(
         subagents().flatMap((item) => {
@@ -540,6 +617,39 @@ export const AgentDetail: Component = () => {
         cfg.permission = undefined
 
       const current = globalSync.data.config.agent?.[a.name] ?? {}
+
+      if (store.mcpRule !== base.mcpRule || !sameMap(store.mcpItem, base.mcpItem) || form.mode !== base.mode) {
+        const list = [
+          ...new Set([
+            ...picked(allowedMcps(), store.mcpRule, store.mcpItem),
+            ...(store.mcpRule === "allow" ? store.mcpExtra : []),
+          ]),
+        ]
+        cfg.mcps =
+          form.mode !== "subagent" &&
+          store.mcpRule === "allow" &&
+          Object.keys(store.mcpItem).length === 0 &&
+          store.mcpExtra.length === 0
+            ? undefined
+            : list
+      }
+
+      if (store.skillRule !== base.skillRule || !sameMap(store.skillItem, base.skillItem) || form.mode !== base.mode) {
+        const list = [
+          ...new Set([
+            ...picked(allowedSkills(), store.skillRule, store.skillItem),
+            ...(store.skillRule === "allow" ? store.skillExtra : []),
+          ]),
+        ]
+        cfg.skills =
+          form.mode !== "subagent" &&
+          store.skillRule === "allow" &&
+          Object.keys(store.skillItem).length === 0 &&
+          store.skillExtra.length === 0
+            ? undefined
+            : list
+      }
+
       const next = { ...(globalSync.data.config.agent ?? {}) }
       if (form.name !== a.name) delete next[a.name]
       next[form.name] = { ...current, ...cfg }
@@ -570,6 +680,12 @@ export const AgentDetail: Component = () => {
         variant: store.variant,
         steps: store.steps,
         hidden: store.hidden,
+        mcpRule: store.mcpRule,
+        mcpItem: { ...store.mcpItem },
+        mcpExtra: [...store.mcpExtra],
+        skillRule: store.skillRule,
+        skillItem: { ...store.skillItem },
+        skillExtra: [...store.skillExtra],
         taskRule: store.taskRule,
         taskItem: { ...store.taskItem },
         perms: { ...store.perms },
@@ -577,7 +693,6 @@ export const AgentDetail: Component = () => {
 
       setForm("isEditing", false)
       setStore("isEditing", false)
-      setInitialMcps(new Set(selectedMcps()))
 
       showToast({
         title: lang.t("common.save"),
@@ -613,7 +728,10 @@ export const AgentDetail: Component = () => {
     if (store.perms.bash !== base.perms.bash) return true
     if (store.perms.bashPaths !== base.perms.bashPaths) return true
     if (store.perms.other !== base.perms.other) return true
-    return !sameSet(selectedMcps(), initialMcps())
+    if (store.mcpRule !== base.mcpRule) return true
+    if (!sameMap(store.mcpItem, base.mcpItem)) return true
+    if (store.skillRule !== base.skillRule) return true
+    return !sameMap(store.skillItem, base.skillItem)
   }
 
   const confirmNavigate = () => {
@@ -1125,49 +1243,73 @@ export const AgentDetail: Component = () => {
                   <section>
                     <h3 class="mb-4 text-14-medium text-text-strong">MCP Servers</h3>
                     <div class="rounded-lg bg-surface-raised-base p-4">
-                      <p class="mb-3 text-12-regular text-text-weak">Select which MCP servers this agent can access</p>
-                      <Show
-                        when={mcps().length > 0}
-                        fallback={
-                          <div class="flex items-center gap-2 text-13-regular text-text-weak">
-                            <Icon name="mcp" size="small" />
-                            <span>No MCP servers available</span>
-                          </div>
+                      <PermissionRow
+                        label="MCP servers"
+                        desc={
+                          form.mode === "subagent"
+                            ? `Allow grants access to all ${mcps().length} MCP servers. Deny blocks all MCP access.`
+                            : `Allow uses all ${mcps().length} MCP servers available in this workspace. Deny blocks all MCP access.`
                         }
+                        level={store.mcpRule}
+                        onChange={setMcpRule}
                       >
-                        <div class="space-y-2">
-                          <For each={mcps()}>
-                            {(mcp) => (
-                              <div class="flex cursor-pointer items-center gap-3 rounded-md p-2 hover:bg-surface-base">
-                                <Checkbox checked={selectedMcps().has(mcp.name)} onChange={() => toggleMcp(mcp.name)} />
-                                <div class="flex flex-1 items-center justify-between">
-                                  <span class="text-13-medium text-text-strong">{mcp.name}</span>
-                                  <div class="flex items-center gap-2">
-                                    <span
-                                      class={
-                                        mcp.type === "local"
-                                          ? "text-11-medium text-text-weak"
-                                          : "text-11-medium text-accent-base"
-                                      }
-                                    >
-                                      {mcp.type}
-                                    </span>
-                                    <span
-                                      class={
-                                        mcp.status === "connected"
-                                          ? "text-11-medium text-success-base"
-                                          : "text-11-medium text-text-weaker"
-                                      }
-                                    >
-                                      {mcp.status}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </For>
+                        <div class="rounded-md border border-border-weak-base bg-surface-base px-3 py-2 text-12-regular text-text-weak">
+                          {mcps().length > 0
+                            ? `${mcps().length} MCP server${mcps().length === 1 ? "" : "s"} currently available`
+                            : "No MCP servers available"}
                         </div>
-                      </Show>
+                        <Show when={mcps().length > 0}>
+                          <div class="space-y-3 pt-3">
+                            <For each={mcps()}>
+                              {(mcp) => (
+                                <PermissionRow
+                                  label={mcp.name}
+                                  desc={`${mcp.type} · ${mcp.status}`}
+                                  level={store.mcpItem[mcp.name] ?? store.mcpRule}
+                                  onChange={(value) => setMcpItem(mcp.name, value)}
+                                />
+                              )}
+                            </For>
+                          </div>
+                        </Show>
+                      </PermissionRow>
+                    </div>
+                  </section>
+
+                  {/* Skills Section */}
+                  <section>
+                    <h3 class="mb-4 text-14-medium text-text-strong">Skills</h3>
+                    <div class="rounded-lg bg-surface-raised-base p-4">
+                      <PermissionRow
+                        label="Skills"
+                        desc={
+                          form.mode === "subagent"
+                            ? `Allow grants access to all ${skills().length} skills. Deny blocks all skills.`
+                            : `Allow uses all ${skills().length} skills available in this workspace. Deny blocks all skills.`
+                        }
+                        level={store.skillRule}
+                        onChange={setSkillRule}
+                      >
+                        <div class="rounded-md border border-border-weak-base bg-surface-base px-3 py-2 text-12-regular text-text-weak">
+                          {skills().length > 0
+                            ? `${skills().length} skill${skills().length === 1 ? "" : "s"} currently available`
+                            : "No skills available"}
+                        </div>
+                        <Show when={skills().length > 0}>
+                          <div class="space-y-3 pt-3">
+                            <For each={skills()}>
+                              {(skill) => (
+                                <PermissionRow
+                                  label={skill.name}
+                                  desc={skill.description || "No description"}
+                                  level={store.skillItem[skill.name] ?? store.skillRule}
+                                  onChange={(value) => setSkillItem(skill.name, value)}
+                                />
+                              )}
+                            </For>
+                          </div>
+                        </Show>
+                      </PermissionRow>
                     </div>
                   </section>
                 </div>

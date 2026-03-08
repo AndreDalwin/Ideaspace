@@ -149,6 +149,17 @@ import type {
   SessionUnshareResponses,
   SessionUpdateErrors,
   SessionUpdateResponses,
+  SettingsMcpCreateErrors,
+  SettingsMcpCreateResponses,
+  SettingsMcpDeleteResponses,
+  SettingsMcpListResponses,
+  SettingsMcpUpdateErrors,
+  SettingsMcpUpdateResponses,
+  SettingsSkillImportErrors,
+  SettingsSkillImportResponses,
+  SettingsSkillRemoveErrors,
+  SettingsSkillRemoveResponses,
+  SettingsSkillUrl,
   SubtaskPartInput,
   TextPartInput,
   ToolIdsErrors,
@@ -2637,6 +2648,240 @@ export class Provider extends HeyApiClient {
   }
 }
 
+export class Mcp extends HeyApiClient {
+  /**
+   * List global MCP configuration
+   *
+   * Get all global-only MCP configuration entries from the settings file.
+   */
+  public list<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).get<SettingsMcpListResponses, unknown, ThrowOnError>({
+      url: "/settings/mcp",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Create global MCP configuration
+   *
+   * Create a global-only MCP configuration entry.
+   */
+  public create<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      name?: string
+      config?: McpLocalConfig | McpRemoteConfig
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "name" },
+            { in: "body", key: "config" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<SettingsMcpCreateResponses, SettingsMcpCreateErrors, ThrowOnError>({
+      url: "/settings/mcp",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+
+  /**
+   * Delete global MCP configuration
+   *
+   * Delete a global-only MCP configuration entry from the settings file.
+   */
+  public delete<ThrowOnError extends boolean = false>(
+    parameters: {
+      name: string
+      directory?: string
+      workspace?: string
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "name" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).delete<SettingsMcpDeleteResponses, unknown, ThrowOnError>({
+      url: "/settings/mcp/{name}",
+      ...options,
+      ...params,
+    })
+  }
+
+  /**
+   * Update global MCP configuration
+   *
+   * Update a global-only MCP configuration entry.
+   */
+  public update<ThrowOnError extends boolean = false>(
+    parameters: {
+      name: string
+      directory?: string
+      workspace?: string
+      config?: McpLocalConfig | McpRemoteConfig
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "path", key: "name" },
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { in: "body", key: "config" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).put<SettingsMcpUpdateResponses, SettingsMcpUpdateErrors, ThrowOnError>({
+      url: "/settings/mcp/{name}",
+      ...options,
+      ...params,
+      headers: {
+        "Content-Type": "application/json",
+        ...options?.headers,
+        ...params.headers,
+      },
+    })
+  }
+}
+
+export class Skill extends HeyApiClient {
+  /**
+   * Import global skills
+   *
+   * Add a global skill catalog URL and return the current skill catalog.
+   */
+  public import<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      settingsSkillUrl?: SettingsSkillUrl
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { key: "settingsSkillUrl", map: "body" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<SettingsSkillImportResponses, SettingsSkillImportErrors, ThrowOnError>(
+      {
+        url: "/settings/skill/import",
+        ...options,
+        ...params,
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+          ...params.headers,
+        },
+      },
+    )
+  }
+
+  /**
+   * Remove global skills
+   *
+   * Remove a global skill catalog URL and return the current skill catalog.
+   */
+  public remove<ThrowOnError extends boolean = false>(
+    parameters?: {
+      directory?: string
+      workspace?: string
+      settingsSkillUrl?: SettingsSkillUrl
+    },
+    options?: Options<never, ThrowOnError>,
+  ) {
+    const params = buildClientParams(
+      [parameters],
+      [
+        {
+          args: [
+            { in: "query", key: "directory" },
+            { in: "query", key: "workspace" },
+            { key: "settingsSkillUrl", map: "body" },
+          ],
+        },
+      ],
+    )
+    return (options?.client ?? this.client).post<SettingsSkillRemoveResponses, SettingsSkillRemoveErrors, ThrowOnError>(
+      {
+        url: "/settings/skill/remove",
+        ...options,
+        ...params,
+        headers: {
+          "Content-Type": "application/json",
+          ...options?.headers,
+          ...params.headers,
+        },
+      },
+    )
+  }
+}
+
+export class Settings extends HeyApiClient {
+  private _mcp?: Mcp
+  get mcp(): Mcp {
+    return (this._mcp ??= new Mcp({ client: this.client }))
+  }
+
+  private _skill?: Skill
+  get skill(): Skill {
+    return (this._skill ??= new Skill({ client: this.client }))
+  }
+}
+
 export class Find extends HeyApiClient {
   /**
    * Find text
@@ -2976,7 +3221,7 @@ export class Auth2 extends HeyApiClient {
   }
 }
 
-export class Mcp extends HeyApiClient {
+export class Mcp2 extends HeyApiClient {
   /**
    * Get MCP status
    *
@@ -3963,6 +4208,11 @@ export class OpencodeClient extends HeyApiClient {
     return (this._provider ??= new Provider({ client: this.client }))
   }
 
+  private _settings?: Settings
+  get settings(): Settings {
+    return (this._settings ??= new Settings({ client: this.client }))
+  }
+
   private _find?: Find
   get find(): Find {
     return (this._find ??= new Find({ client: this.client }))
@@ -3973,9 +4223,9 @@ export class OpencodeClient extends HeyApiClient {
     return (this._file ??= new File({ client: this.client }))
   }
 
-  private _mcp?: Mcp
-  get mcp(): Mcp {
-    return (this._mcp ??= new Mcp({ client: this.client }))
+  private _mcp?: Mcp2
+  get mcp(): Mcp2 {
+    return (this._mcp ??= new Mcp2({ client: this.client }))
   }
 
   private _tui?: Tui

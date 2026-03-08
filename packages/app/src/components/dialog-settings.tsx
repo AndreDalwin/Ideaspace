@@ -9,6 +9,8 @@ import { SettingsImages } from "./settings-images"
 import { SettingsKeybinds } from "./settings-keybinds"
 import { SettingsProviders } from "./settings-providers"
 import { SettingsModels } from "./settings-models"
+import { SettingsSkills } from "./settings-skills"
+import { SettingsMcp } from "./settings-mcp"
 
 export const DialogSettings: Component = () => {
   const language = useLanguage()
@@ -39,17 +41,26 @@ export const DialogSettings: Component = () => {
                 <div class="flex flex-col gap-1.5">
                   <Tabs.SectionTitle>{language.t("settings.section.server")}</Tabs.SectionTitle>
                   <div class="flex flex-col gap-1.5 w-full">
-                    <Tabs.Trigger value="providers">
+                    <Tabs.Trigger value="providers" data-action="settings-tab-providers">
                       <Icon name="providers" />
                       {language.t("settings.providers.title")}
                     </Tabs.Trigger>
-                    <Tabs.Trigger value="models">
+                    <Tabs.Trigger value="models" data-action="settings-tab-models">
                       <Icon name="models" />
                       {language.t("settings.models.title")}
                     </Tabs.Trigger>
-                    <Tabs.Trigger value="images">
+                    <Tabs.Trigger value="images" data-action="settings-tab-images">
                       <Icon name="photo" />
                       {images()}
+                    </Tabs.Trigger>
+                    <Tabs.Trigger value="mcp" data-action="settings-tab-mcp">
+                      <Icon name="mcp" />
+                      {language.t("settings.mcp.title")}
+                    </Tabs.Trigger>
+
+                    <Tabs.Trigger value="skills" data-action="settings-tab-skills">
+                      <Icon name="brain" />
+                      {language.t("settings.skills.title")}
                     </Tabs.Trigger>
                   </div>
                 </div>
@@ -75,6 +86,12 @@ export const DialogSettings: Component = () => {
         </Tabs.Content>
         <Tabs.Content value="images" class="no-scrollbar">
           <SettingsImages />
+        </Tabs.Content>
+        <Tabs.Content value="mcp" class="no-scrollbar">
+          <SettingsMcp />
+        </Tabs.Content>
+        <Tabs.Content value="skills" class="no-scrollbar">
+          <SettingsSkills />
         </Tabs.Content>
       </Tabs>
     </Dialog>

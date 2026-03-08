@@ -1,4 +1,6 @@
-import { test, expect } from "bun:test"
+import { afterEach, expect, test } from "bun:test"
+import { Global } from "../../src/global"
+import { Settings } from "../../src/settings"
 import { Skill } from "../../src/skill"
 import { Instance } from "../../src/project/instance"
 import { tmpdir } from "../fixture/fixture"
@@ -22,11 +24,18 @@ This skill is loaded from the global home directory.
   )
 }
 
-test("discovers skills from .opencode/skill/ directory", async () => {
+afterEach(async () => {
+  await fs.rm(path.join(Global.Path.config, "skills"), {
+    recursive: true,
+    force: true,
+  })
+})
+
+test("discovers skills from .ideaspace/skill/ directory", async () => {
   await using tmp = await tmpdir({
     git: true,
     init: async (dir) => {
-      const skillDir = path.join(dir, ".opencode", "skill", "test-skill")
+      const skillDir = path.join(dir, ".ideaspace", "skill", "test-skill")
       await Bun.write(
         path.join(skillDir, "SKILL.md"),
         `---
@@ -59,7 +68,7 @@ test("returns skill directories from Skill.dirs", async () => {
   await using tmp = await tmpdir({
     git: true,
     init: async (dir) => {
-      const skillDir = path.join(dir, ".opencode", "skill", "dir-skill")
+      const skillDir = path.join(dir, ".ideaspace", "skill", "dir-skill")
       await Bun.write(
         path.join(skillDir, "SKILL.md"),
         `---
@@ -81,7 +90,7 @@ description: Skill for dirs test.
       directory: tmp.path,
       fn: async () => {
         const dirs = await Skill.dirs()
-        const skillDir = path.join(tmp.path, ".opencode", "skill", "dir-skill")
+        const skillDir = path.join(tmp.path, ".ideaspace", "skill", "dir-skill")
         expect(dirs).toContain(skillDir)
         expect(dirs.length).toBe(1)
       },
@@ -91,12 +100,12 @@ description: Skill for dirs test.
   }
 })
 
-test("discovers multiple skills from .opencode/skill/ directory", async () => {
+test("discovers multiple skills from .ideaspace/skill/ directory", async () => {
   await using tmp = await tmpdir({
     git: true,
     init: async (dir) => {
-      const skillDir1 = path.join(dir, ".opencode", "skill", "skill-one")
-      const skillDir2 = path.join(dir, ".opencode", "skill", "skill-two")
+      const skillDir1 = path.join(dir, ".ideaspace", "skill", "skill-one")
+      const skillDir2 = path.join(dir, ".ideaspace", "skill", "skill-two")
       await Bun.write(
         path.join(skillDir1, "SKILL.md"),
         `---
@@ -135,7 +144,7 @@ test("skips skills with missing frontmatter", async () => {
   await using tmp = await tmpdir({
     git: true,
     init: async (dir) => {
-      const skillDir = path.join(dir, ".opencode", "skill", "no-frontmatter")
+      const skillDir = path.join(dir, ".ideaspace", "skill", "no-frontmatter")
       await Bun.write(
         path.join(skillDir, "SKILL.md"),
         `# No Frontmatter
@@ -216,6 +225,44 @@ test("returns empty array when no skills exist", async () => {
     fn: async () => {
       const skills = await Skill.all()
       expect(skills).toEqual([])
+    },
+  })
+})
+
+test("imports a managed skill from SKILL.md and copies sibling files", async () => {
+  await using tmp = await tmpdir({
+    git: true,
+    init: async (dir) => {
+      const skill = path.join(dir, "fixtures", "example-skill")
+      await Bun.write(
+        path.join(skill, "SKILL.md"),
+        `---
+name: Example Skill
+description: Imported from a markdown file path.
+---
+
+# Example Skill
+`,
+      )
+      await Bun.write(path.join(skill, "reference", "guide.md"), "# guide")
+      await Bun.write(path.join(skill, "scripts", "run.sh"), "#!/bin/sh\necho hi\n")
+    },
+  })
+
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const list = await Settings.importSkillDirectory(path.join(tmp.path, "fixtures", "example-skill", "SKILL.md"))
+      const target = path.join(Global.Path.config, "skills", "example-skill")
+      const skill = list.find((item) => item.name === "Example Skill")
+
+      expect(skill).toBeDefined()
+      expect(skill?.location).toBe(path.join(target, "SKILL.md"))
+      expect(await fs.readFile(path.join(target, "reference", "guide.md"), "utf8")).toBe("# guide")
+      expect(await fs.readFile(path.join(target, "scripts", "run.sh"), "utf8")).toContain("echo hi")
+      expect((await Skill.all()).find((item) => item.name === "Example Skill")?.location).toBe(
+        path.join(target, "SKILL.md"),
+      )
     },
   })
 })
@@ -331,8 +378,8 @@ test("properly resolves directories that skills live in", async () => {
   await using tmp = await tmpdir({
     git: true,
     init: async (dir) => {
-      const opencodeSkillDir = path.join(dir, ".opencode", "skill", "agent-skill")
-      const opencodeSkillsDir = path.join(dir, ".opencode", "skills", "agent-skill")
+      const opencodeSkillDir = path.join(dir, ".ideaspace", "skill", "agent-skill")
+      const opencodeSkillsDir = path.join(dir, ".ideaspace", "skills", "agent-skill")
       const claudeDir = path.join(dir, ".claude", "skills", "claude-skill")
       const agentDir = path.join(dir, ".agents", "skills", "agent-skill")
       await Bun.write(
@@ -359,7 +406,7 @@ description: A skill in the .agents/skills directory.
         path.join(opencodeSkillDir, "SKILL.md"),
         `---
 name: opencode-skill
-description: A skill in the .opencode/skill directory.
+description: A skill in the .ideaspace/skill directory.
 ---
 
 # OpenCode Skill
@@ -369,7 +416,7 @@ description: A skill in the .opencode/skill directory.
         path.join(opencodeSkillsDir, "SKILL.md"),
         `---
 name: opencode-skill
-description: A skill in the .opencode/skills directory.
+description: A skill in the .ideaspace/skills directory.
 ---
 
 # OpenCode Skill
