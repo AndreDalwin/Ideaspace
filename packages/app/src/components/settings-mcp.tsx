@@ -18,8 +18,12 @@ function DialogDeleteMcp(props: { name: string; onDelete: () => Promise<void> })
 
   const handleDelete = async () => {
     setDeleting(true)
-    await props.onDelete()
-    dialog.close()
+    try {
+      await props.onDelete()
+      dialog.close()
+    } finally {
+      setDeleting(false)
+    }
   }
 
   return (

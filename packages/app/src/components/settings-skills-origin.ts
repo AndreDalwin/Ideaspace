@@ -11,7 +11,7 @@ const clean = (value: string) => value.replace(/\\/g, "/").replace(/\/+/g, "/").
 
 const absolute = (value: string) => {
   const path = value.replace(/\\/g, "/")
-  return path.startsWith("/") || path.startsWith("//") || /^[a-z]:\//i.test(path)
+  return path.startsWith("/") || /^[a-z]:\//i.test(path)
 }
 
 const within = (file: string, dir: string) => {
