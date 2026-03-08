@@ -103,11 +103,6 @@ function sameMap(a: Record<string, PermissionLevel>, b: Record<string, Permissio
   return keys.every((key) => a[key] === b[key])
 }
 
-function sameSet(a: Set<string>, b: Set<string>) {
-  if (a.size !== b.size) return false
-  return [...a].every((item) => b.has(item))
-}
-
 function PermissionRow(props: {
   label: string
   desc: string
@@ -324,11 +319,6 @@ export const AgentDetail: Component = () => {
     setStore("isEditing", true)
   }
 
-  const access = (mode: FormState["mode"], value: unknown): PermissionLevel => {
-    if (Array.isArray(value)) return value.length > 0 ? "allow" : "deny"
-    return mode === "subagent" ? "deny" : "allow"
-  }
-
   const allowedMcps = () => mcps().map((item) => item.name)
 
   const allowedSkills = () => skills().map((item) => item.name)
@@ -343,7 +333,7 @@ export const AgentDetail: Component = () => {
   const accessState = (all: string[], mode: FormState["mode"], value: unknown) => {
     const picked = Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : undefined
     if (!picked) {
-      const rule = mode === "subagent" ? "deny" : "allow"
+      const rule: PermissionLevel = mode === "subagent" ? "deny" : "allow"
       return { rule, item: {} as Record<string, PermissionLevel> }
     }
 
@@ -460,8 +450,16 @@ export const AgentDetail: Component = () => {
       variant: cfg?.variant ?? a.variant ?? "",
       steps: cfg?.steps?.toString() ?? a.steps?.toString() ?? "",
       hidden: (cfg?.hidden ?? a.hidden) === true,
-      mcpAccess: access(mode, rawMcps),
-      skillAccess: access(mode, rawSkills),
+      ...(() => {
+        const mcp = accessState(allowedMcps(), mode, rawMcps)
+        const skill = accessState(allowedSkills(), mode, rawSkills)
+        return {
+          mcpRule: mcp.rule,
+          mcpItem: mcp.item,
+          skillRule: skill.rule,
+          skillItem: skill.item,
+        }
+      })(),
       taskRule: task.rule,
       taskItem: task.item,
       perms: {
@@ -491,8 +489,10 @@ export const AgentDetail: Component = () => {
     setStore("variant", next.variant)
     setStore("steps", next.steps)
     setStore("hidden", next.hidden)
-    setStore("mcpAccess", next.mcpAccess)
-    setStore("skillAccess", next.skillAccess)
+    setStore("mcpRule", next.mcpRule)
+    setStore("mcpItem", next.mcpItem)
+    setStore("skillRule", next.skillRule)
+    setStore("skillItem", next.skillItem)
     setStore("taskRule", next.taskRule)
     setStore("taskItem", next.taskItem)
 
@@ -606,12 +606,20 @@ export const AgentDetail: Component = () => {
 
       const current = globalSync.data.config.agent?.[a.name] ?? {}
 
-      if (store.mcpAccess !== base.mcpAccess || form.mode !== base.mode) {
-        cfg.mcps = store.mcpAccess === "allow" ? (form.mode === "subagent" ? allowedMcps() : undefined) : []
+      if (store.mcpRule !== base.mcpRule || !sameMap(store.mcpItem, base.mcpItem) || form.mode !== base.mode) {
+        const list = picked(allowedMcps(), store.mcpRule, store.mcpItem)
+        cfg.mcps =
+          form.mode !== "subagent" && store.mcpRule === "allow" && Object.keys(store.mcpItem).length === 0
+            ? undefined
+            : list
       }
 
-      if (store.skillAccess !== base.skillAccess || form.mode !== base.mode) {
-        cfg.skills = store.skillAccess === "allow" ? (form.mode === "subagent" ? allowedSkills() : undefined) : []
+      if (store.skillRule !== base.skillRule || !sameMap(store.skillItem, base.skillItem) || form.mode !== base.mode) {
+        const list = picked(allowedSkills(), store.skillRule, store.skillItem)
+        cfg.skills =
+          form.mode !== "subagent" && store.skillRule === "allow" && Object.keys(store.skillItem).length === 0
+            ? undefined
+            : list
       }
 
       const next = { ...(globalSync.data.config.agent ?? {}) }
@@ -644,8 +652,10 @@ export const AgentDetail: Component = () => {
         variant: store.variant,
         steps: store.steps,
         hidden: store.hidden,
-        mcpAccess: store.mcpAccess,
-        skillAccess: store.skillAccess,
+        mcpRule: store.mcpRule,
+        mcpItem: { ...store.mcpItem },
+        skillRule: store.skillRule,
+        skillItem: { ...store.skillItem },
         taskRule: store.taskRule,
         taskItem: { ...store.taskItem },
         perms: { ...store.perms },
@@ -688,8 +698,10 @@ export const AgentDetail: Component = () => {
     if (store.perms.bash !== base.perms.bash) return true
     if (store.perms.bashPaths !== base.perms.bashPaths) return true
     if (store.perms.other !== base.perms.other) return true
-    if (store.mcpAccess !== base.mcpAccess) return true
-    return store.skillAccess !== base.skillAccess
+    if (store.mcpRule !== base.mcpRule) return true
+    if (!sameMap(store.mcpItem, base.mcpItem)) return true
+    if (store.skillRule !== base.skillRule) return true
+    return !sameMap(store.skillItem, base.skillItem)
   }
 
   const confirmNavigate = () => {
@@ -1208,14 +1220,28 @@ export const AgentDetail: Component = () => {
                             ? `Allow grants access to all ${mcps().length} MCP servers. Deny blocks all MCP access.`
                             : `Allow uses all ${mcps().length} MCP servers available in this workspace. Deny blocks all MCP access.`
                         }
-                        level={store.mcpAccess}
-                        onChange={setMcpAccess}
+                        level={store.mcpRule}
+                        onChange={setMcpRule}
                       >
                         <div class="rounded-md border border-border-weak-base bg-surface-base px-3 py-2 text-12-regular text-text-weak">
                           {mcps().length > 0
                             ? `${mcps().length} MCP server${mcps().length === 1 ? "" : "s"} currently available`
                             : "No MCP servers available"}
                         </div>
+                        <Show when={mcps().length > 0}>
+                          <div class="space-y-3 pt-3">
+                            <For each={mcps()}>
+                              {(mcp) => (
+                                <PermissionRow
+                                  label={mcp.name}
+                                  desc={`${mcp.type} · ${mcp.status}`}
+                                  level={store.mcpItem[mcp.name] ?? store.mcpRule}
+                                  onChange={(value) => setMcpItem(mcp.name, value)}
+                                />
+                              )}
+                            </For>
+                          </div>
+                        </Show>
                       </PermissionRow>
                     </div>
                   </section>
@@ -1231,14 +1257,28 @@ export const AgentDetail: Component = () => {
                             ? `Allow grants access to all ${skills().length} skills. Deny blocks all skills.`
                             : `Allow uses all ${skills().length} skills available in this workspace. Deny blocks all skills.`
                         }
-                        level={store.skillAccess}
-                        onChange={setSkillAccess}
+                        level={store.skillRule}
+                        onChange={setSkillRule}
                       >
                         <div class="rounded-md border border-border-weak-base bg-surface-base px-3 py-2 text-12-regular text-text-weak">
                           {skills().length > 0
                             ? `${skills().length} skill${skills().length === 1 ? "" : "s"} currently available`
                             : "No skills available"}
                         </div>
+                        <Show when={skills().length > 0}>
+                          <div class="space-y-3 pt-3">
+                            <For each={skills()}>
+                              {(skill) => (
+                                <PermissionRow
+                                  label={skill.name}
+                                  desc={skill.description || "No description"}
+                                  level={store.skillItem[skill.name] ?? store.skillRule}
+                                  onChange={(value) => setSkillItem(skill.name, value)}
+                                />
+                              )}
+                            </For>
+                          </div>
+                        </Show>
                       </PermissionRow>
                     </div>
                   </section>
