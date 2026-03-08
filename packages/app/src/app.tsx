@@ -10,6 +10,7 @@ import { MetaProvider } from "@solidjs/meta"
 import { BaseRouterProps, Navigate, Route, Router, useParams } from "@solidjs/router"
 import { Component, ErrorBoundary, type JSX, lazy, type ParentProps, Show, Suspense } from "solid-js"
 
+import { AgentsProvider } from "@/context/agents"
 import { CommandProvider } from "@/context/command"
 import { ContextBankProvider } from "@/context/context-bank"
 import { SkillsProvider } from "@/context/skills"
