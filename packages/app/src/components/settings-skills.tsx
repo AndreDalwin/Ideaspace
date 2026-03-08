@@ -1,37 +1,19 @@
 import { Button } from "@opencode-ai/ui/button"
 import { Tag } from "@opencode-ai/ui/tag"
 import { showToast } from "@opencode-ai/ui/toast"
+import { useGlobalSync } from "@/context/global-sync"
 import { usePlatform } from "@/context/platform"
 import { useSettingsConfig } from "@/context/settings-config"
 import { useLanguage } from "@/context/language"
+import { classifySkillOrigin, type SkillOrigin } from "./settings-skills-origin"
 import { type Component, For, Show, createMemo } from "solid-js"
 import { createStore } from "solid-js/store"
-
-type SkillOrigin = "managed-global" | "inherited-external" | "inherited-url-cache"
 
 type SkillItem = {
   name: string
   description: string
   location: string
   content: string
-}
-
-function classifyOrigin(location: string): SkillOrigin {
-  const normalized = location.replace(/\\/g, "/").toLowerCase()
-  if (normalized.includes("/cache/")) return "inherited-url-cache"
-  if (normalized.includes("/.claude/") || normalized.includes("/.agents/")) return "inherited-external"
-  if (normalized.includes("/.ideaspace/skills/")) return "managed-global"
-  if (normalized.includes("/opencode/skills/") || normalized.includes("/ideaspace/skills/")) return "managed-global"
-  if (normalized.includes("/skills/")) {
-    const parts = normalized.split("/")
-    const skillsIdx = parts.indexOf("skills")
-    if (skillsIdx > 0) {
-      const parent = parts[skillsIdx - 1]
-      if (parent && (parent.startsWith(".") || parent === "resources" || parent === "data")) return "managed-global"
-    }
-    return "inherited-external"
-  }
-  return "inherited-external"
 }
 
 function originLabel(origin: SkillOrigin, t: (key: string) => string) {
@@ -43,7 +25,17 @@ function originLabel(origin: SkillOrigin, t: (key: string) => string) {
 export const SettingsSkills: Component = () => {
   const lang = useLanguage()
   const platform = usePlatform()
+  const sync = useGlobalSync()
   const cfg = useSettingsConfig()
+
+  function classifyOrigin(location: string): SkillOrigin {
+    return classifySkillOrigin(location, {
+      home: sync.data.path.home,
+      config: sync.data.path.config,
+      directory: sync.data.path.directory,
+      worktree: sync.data.path.worktree,
+    })
+  }
 
   const [importStore, setImportStore] = createStore({
     open: false,
