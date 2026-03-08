@@ -1369,6 +1369,10 @@ export type Config = {
    */
   small_model?: string
   /**
+   * Image model to use for image generation in the format of provider/model
+   */
+  image_model?: string
+  /**
    * Default agent to use when none is specified. Must be a primary agent. Falls back to 'build' if not set or if the specified agent is invalid.
    */
   default_agent?: string

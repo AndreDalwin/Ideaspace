@@ -5,6 +5,7 @@ import { Icon } from "@opencode-ai/ui/icon"
 import { useLanguage } from "@/context/language"
 import { usePlatform } from "@/context/platform"
 import { SettingsGeneral } from "./settings-general"
+import { SettingsImages } from "./settings-images"
 import { SettingsKeybinds } from "./settings-keybinds"
 import { SettingsProviders } from "./settings-providers"
 import { SettingsModels } from "./settings-models"
@@ -12,9 +13,10 @@ import { SettingsModels } from "./settings-models"
 export const DialogSettings: Component = () => {
   const language = useLanguage()
   const platform = usePlatform()
+  const images = () => language.t("settings.images.title") || "Images"
 
   return (
-    <Dialog size="x-large" transition>
+    <Dialog size="x-large" transition class="h-full overflow-hidden">
       <Tabs orientation="vertical" variant="settings" defaultValue="general" class="h-full settings-dialog">
         <Tabs.List>
           <div class="flex flex-col justify-between h-full w-full">
@@ -45,6 +47,10 @@ export const DialogSettings: Component = () => {
                       <Icon name="models" />
                       {language.t("settings.models.title")}
                     </Tabs.Trigger>
+                    <Tabs.Trigger value="images">
+                      <Icon name="photo" />
+                      {images()}
+                    </Tabs.Trigger>
                   </div>
                 </div>
               </div>
@@ -66,6 +72,9 @@ export const DialogSettings: Component = () => {
         </Tabs.Content>
         <Tabs.Content value="models" class="no-scrollbar">
           <SettingsModels />
+        </Tabs.Content>
+        <Tabs.Content value="images" class="no-scrollbar">
+          <SettingsImages />
         </Tabs.Content>
       </Tabs>
     </Dialog>

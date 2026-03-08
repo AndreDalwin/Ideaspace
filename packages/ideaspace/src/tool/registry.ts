@@ -22,6 +22,7 @@ import z from "zod"
 import { Plugin } from "../plugin"
 import { WebSearchTool } from "./websearch"
 import { CodeSearchTool } from "./codesearch"
+import { ImageGenerateTool } from "./image_generate"
 import { Flag } from "@/flag/flag"
 import { Log } from "@/util/log"
 import { LspTool } from "./lsp"
@@ -117,6 +118,7 @@ export namespace ToolRegistry {
       CodeSearchTool,
       SkillTool,
       ApplyPatchTool,
+      ImageGenerateTool,
       ...(Flag.IDEASPACE_EXPERIMENTAL_LSP_TOOL ? [LspTool] : []),
       ...(config.experimental?.batch_tool === true ? [BatchTool] : []),
       ...(Flag.IDEASPACE_EXPERIMENTAL_PLAN_MODE ? [PlanEnterTool, PlanExitTool] : []),

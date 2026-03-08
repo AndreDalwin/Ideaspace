@@ -56,6 +56,26 @@ test("loads JSON config file", async () => {
   })
 })
 
+test("loads image_model from config file", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await writeConfig(dir, {
+        $schema: "https://ideaspace.ai/config.json",
+        image_model: "google/gemini-2.0-flash-exp",
+        username: "testuser",
+      })
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await Config.get()
+      expect(config.image_model).toBe("google/gemini-2.0-flash-exp")
+      expect(config.username).toBe("testuser")
+    },
+  })
+})
+
 test("ignores legacy tui keys in ideaspace config", async () => {
   await using tmp = await tmpdir({
     init: async (dir) => {
@@ -594,6 +614,53 @@ test("updates config and writes to file", async () => {
 
       const writtenConfig = await Filesystem.readJson(path.join(tmp.path, "ideaspace.json"))
       expect(writtenConfig.model).toBe("updated/model")
+    },
+  })
+})
+
+test("updates image_model config field", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const next = { image_model: "google/gemini-2.0-flash-exp" } satisfies Config.Info
+      await Config.update(next)
+
+      const writtenConfig = await Filesystem.readJson(path.join(tmp.path, "ideaspace.json"))
+      expect(writtenConfig.image_model).toBe("google/gemini-2.0-flash-exp")
+
+      const config = await Config.get()
+      expect(config.image_model).toBe("google/gemini-2.0-flash-exp")
+    },
+  })
+})
+
+test("image_model is optional in config", async () => {
+  await using tmp = await tmpdir({
+    init: async (dir) => {
+      await writeConfig(dir, {
+        $schema: "https://ideaspace.ai/config.json",
+        model: "test/model",
+      })
+    },
+  })
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const config = await Config.get()
+      expect(config.model).toBe("test/model")
+      expect(config.image_model).toBeUndefined()
+    },
+  })
+})
+
+test("rejects invalid image_model type", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const invalidConfig = { image_model: 123 }
+      await expect(Config.update(invalidConfig as unknown as Config.Info)).rejects.toThrow()
     },
   })
 })

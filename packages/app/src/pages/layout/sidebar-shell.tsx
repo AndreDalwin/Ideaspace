@@ -7,7 +7,7 @@ import {
   closestCenter,
   type DragEvent,
 } from "@thisbeyond/solid-dnd"
-import { useLocation, useNavigate } from "@solidjs/router"
+
 import { ConstrainDragXAxis } from "@/utils/solid-dnd"
 import { IconButton } from "@opencode-ai/ui/icon-button"
 import { Tooltip, TooltipKeybind } from "@opencode-ai/ui/tooltip"
@@ -30,15 +30,14 @@ export const SidebarContent = (props: {
   settingsLabel: Accessor<string>
   settingsKeybind: Accessor<string | undefined>
   onOpenSettings: () => void
+  agentsLabel: Accessor<string>
+  onOpenAgents: () => void
   helpLabel: Accessor<string>
   onOpenHelp: () => void
   renderPanel: () => JSX.Element
 }): JSX.Element => {
   const expanded = createMemo(() => sidebarExpanded(props.mobile, props.opened()))
   const placement = () => (props.mobile ? "bottom" : "right")
-  const location = useLocation()
-  const navigate = useNavigate()
-  const isAgentsActive = createMemo(() => location.pathname === "/agents")
   let panel: HTMLDivElement | undefined
 
   createEffect(() => {
@@ -95,13 +94,13 @@ export const SidebarContent = (props: {
           </DragDropProvider>
         </div>
         <div class="shrink-0 w-full pt-3 pb-6 flex flex-col items-center gap-2">
-          <Tooltip placement={placement()} value="Agents">
+          <Tooltip placement={placement()} value={props.agentsLabel()}>
             <IconButton
               icon="brain"
-              variant={isAgentsActive() ? "secondary" : "ghost"}
+              variant="ghost"
               size="large"
-              onClick={() => navigate("/agents")}
-              aria-label="Agents"
+              onClick={props.onOpenAgents}
+              aria-label={props.agentsLabel()}
             />
           </Tooltip>
           <TooltipKeybind placement={placement()} title={props.settingsLabel()} keybind={props.settingsKeybind() ?? ""}>

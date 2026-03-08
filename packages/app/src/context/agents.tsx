@@ -1,5 +1,5 @@
 import { createStore } from "solid-js/store"
-import { createEffect, createMemo, onMount } from "solid-js"
+import { createEffect, createMemo, createSignal, onMount } from "solid-js"
 import { createSimpleContext } from "@opencode-ai/ui/context"
 import { useGlobalSync } from "@/context/global-sync"
 import { useGlobalSDK } from "@/context/global-sdk"
@@ -17,6 +17,7 @@ export const { use: useAgents, provider: AgentsProvider } = createSimpleContext(
   init: () => {
     const sdk = useGlobalSDK()
     const globalSync = useGlobalSync()
+    const [initialLoadComplete, setInitialLoadComplete] = createSignal(false)
 
     const [store, setStore] = createStore<AgentsState>({
       agents: [],
@@ -48,6 +49,7 @@ export const { use: useAgents, provider: AgentsProvider } = createSimpleContext(
       setStore("error", undefined)
       await Promise.all([fetchAgents(), fetchConfig()])
       setStore("loading", false)
+      setInitialLoadComplete(true)
     }
 
     onMount(() => {
@@ -106,7 +108,7 @@ export const { use: useAgents, provider: AgentsProvider } = createSimpleContext(
 
     return {
       get ready() {
-        return !store.loading
+        return initialLoadComplete()
       },
       get loading() {
         return store.loading
