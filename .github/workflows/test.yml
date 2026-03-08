@@ -9,7 +9,7 @@ on:
 jobs:
   verify:
     name: verify desktop stack
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     defaults:
       run:
         shell: bash
@@ -27,7 +27,7 @@ jobs:
 
   required:
     name: test (linux)
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     needs:
       - verify
     if: always()
