@@ -1,5 +1,6 @@
 import { Button } from "@opencode-ai/ui/button"
 import { useDialog } from "@opencode-ai/ui/context/dialog"
+import { Dialog } from "@opencode-ai/ui/dialog"
 import { Icon } from "@opencode-ai/ui/icon"
 import { IconButton } from "@opencode-ai/ui/icon-button"
 import { Tag } from "@opencode-ai/ui/tag"
@@ -9,6 +10,34 @@ import { useGlobalSDK } from "@/context/global-sdk"
 import { useLanguage } from "@/context/language"
 import { Component, createMemo, createSignal, For, Show } from "solid-js"
 import { DialogMcp, type McpInput } from "./dialog-mcp"
+
+function DialogDeleteMcp(props: { name: string; onDelete: () => Promise<void> }) {
+  const dialog = useDialog()
+  const lang = useLanguage()
+  const [deleting, setDeleting] = createSignal(false)
+
+  const handleDelete = async () => {
+    setDeleting(true)
+    await props.onDelete()
+    dialog.close()
+  }
+
+  return (
+    <Dialog title={lang.t("mcp.delete.title")} fit>
+      <div class="flex flex-col gap-4 pl-6 pr-2.5 pb-3">
+        <span class="text-14-regular text-text-strong">{lang.t("mcp.delete.confirm", { name: props.name })}</span>
+        <div class="flex justify-end gap-2">
+          <Button variant="ghost" size="large" onClick={() => dialog.close()} disabled={deleting()}>
+            {lang.t("common.cancel")}
+          </Button>
+          <Button variant="primary" size="large" onClick={handleDelete} disabled={deleting()}>
+            {lang.t("mcp.delete.button")}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
+  )
+}
 
 export const SettingsMcp: Component = () => {
   const lang = useLanguage()
@@ -109,7 +138,7 @@ export const SettingsMcp: Component = () => {
     }
   }
 
-  const remove = async (name: string) => {
+  const performRemove = async (name: string) => {
     try {
       await settings.mcpOps.remove(name)
       showToast({
@@ -120,7 +149,12 @@ export const SettingsMcp: Component = () => {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       showToast({ title: lang.t("common.requestFailed"), description: msg })
+      throw err
     }
+  }
+
+  const confirmRemove = (name: string) => {
+    dialog.show(() => <DialogDeleteMcp name={name} onDelete={() => performRemove(name)} />)
   }
 
   const openAddDialog = () => {
@@ -265,7 +299,7 @@ export const SettingsMcp: Component = () => {
                           icon="trash"
                           variant="ghost"
                           size="small"
-                          onClick={() => remove(item.name)}
+                          onClick={() => confirmRemove(item.name)}
                           aria-label={lang.t("common.delete")}
                           data-selector={`mcp-delete-${item.name}`}
                         />
