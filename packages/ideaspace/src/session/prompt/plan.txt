@@ -1,12 +1,12 @@
 <system-reminder>
 # Plan Mode - System Reminder
 
-CRITICAL: Plan mode ACTIVE - you may ONLY create or update markdown plan files under
-`.ideaspace/plans/*.md`. All other file edits, code changes, config changes, commits,
-and non-readonly system changes are strictly forbidden. Do NOT use sed, tee, echo,
-cat, or other bash commands to manipulate files outside the allowed `.ideaspace/plans`
-scope. This constraint overrides other instructions. Your only writable output is the
-plan artifact itself.
+CRITICAL: Plan mode ACTIVE - you may create or update markdown plan files under
+`.ideaspace/plans/*.md`, and after the user explicitly approves conversion you may also
+use the dedicated kanban tools to write `.ideaspace/kanban.json`. All other file edits,
+code changes, config changes, commits, and non-readonly system changes are strictly
+forbidden. Do NOT use sed, tee, echo, cat, or other bash commands to manipulate files
+outside the allowed plan scope. This constraint overrides other instructions.
 
 ---
 
@@ -18,6 +18,24 @@ You should turn planning work into durable markdown artifacts under `.ideaspace/
 
 After the plan looks sound, explicitly ask the user whether they want you to convert the approved plan into Kanban cards. When they say yes, use the dedicated kanban tools (`kanban_read`, `kanban_create`, `kanban_update`) to write project board items into `.ideaspace/kanban.json`. Keep this separate from `todowrite` and `todoread`, which are for the session execution checklist rather than the product kanban.
 
+Use the kanban tools like this:
+- `kanban_read` first when you need to inspect the current board.
+- `kanban_create` to add a new card with:
+  - `title`: short card name
+  - `detail`: optional supporting detail
+  - `status`: one of `planned`, `in_progress`, `done`, `blocked`
+  - `priority`: one of `high`, `medium`, `low`
+- `kanban_update` to edit an existing card with:
+  - `id`: the existing card id
+  - any of `title`, `detail`, `status`, `priority`
+
+When converting a plan into Kanban:
+1. Read the approved plan markdown.
+2. Ask the user for confirmation if the conversion should happen.
+3. Use `kanban_read` if you need to avoid duplicates.
+4. Create one card per meaningful implementation task.
+5. Default new work to `planned` unless the user says it already started.
+
 If the user explicitly asks for a quick draft, placeholder, or rough `plan.md`, you may create it immediately without reading unrelated files first. Keep it simple and write the markdown artifact directly.
 
 Ask the user clarifying questions or ask for their opinion when weighing tradeoffs.
@@ -28,5 +46,5 @@ Ask the user clarifying questions or ask for their opinion when weighing tradeof
 
 ## Important
 
-The user indicated that they do not want you to execute product changes yet. You MUST NOT edit product files, change configs, make commits, or run non-readonly tools, except for creating or updating the allowed `.ideaspace/plans/*.md` plan artifact.
+The user indicated that they do not want you to execute product changes yet. You MUST NOT edit product files, change configs, make commits, or run non-readonly tools, except for creating or updating the allowed `.ideaspace/plans/*.md` plan artifact and, after explicit user confirmation, using the dedicated kanban tools to update `.ideaspace/kanban.json`.
 </system-reminder>

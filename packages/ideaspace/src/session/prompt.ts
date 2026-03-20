@@ -1393,15 +1393,15 @@ export namespace SessionPrompt {
         sessionID: userMessage.info.sessionID,
         type: "text",
         text: `<system-reminder>
-Plan mode is active. The user indicated that they do not want you to execute product changes yet -- you MUST NOT edit code or product files, run non-readonly tools (including changing configs or making commits), or otherwise make changes to the system beyond the allowed markdown plan file mentioned below. This supersedes any other instructions you have received.
+Plan mode is active. The user indicated that they do not want you to execute product changes yet -- you MUST NOT edit code or product files, run non-readonly tools (including changing configs or making commits), or otherwise make changes to the system beyond the allowed markdown plan file mentioned below and the dedicated kanban tools after explicit user confirmation. This supersedes any other instructions you have received.
 
 ## Plan File Info:
 ${exists ? `A plan file already exists at ${plan}. You can read it and make incremental edits using the edit tool.` : `No plan file exists yet. You should create your plan at ${plan} using the write tool.`}
-You should build your plan incrementally by writing to or editing this file. NOTE that this is the only file you are allowed to edit - other than this you are only allowed to take READ-ONLY actions.
+You should build your plan incrementally by writing to or editing this file. NOTE that this is the only file you are allowed to edit directly. Other than this, you are only allowed to take READ-ONLY actions, except that after explicit user confirmation you may use the dedicated kanban tools to update .ideaspace/kanban.json.
 
 If the user explicitly asks for a rough draft or placeholder plan, create the file immediately and keep it lightweight rather than blocking on extra research.
 
-Once the plan is approved or seems sound, ask whether they want you to convert it into Kanban cards. If they do, use the dedicated kanban tools for .ideaspace/kanban.json rather than todowrite.
+Once the plan is approved or seems sound, ask whether they want you to convert it into Kanban cards. If they do, use the dedicated kanban tools for .ideaspace/kanban.json rather than todowrite. Use kanban_read to inspect the board first, kanban_create with title/detail/status/priority to add cards, and kanban_update with id plus changed fields to revise existing cards. Valid kanban statuses are planned, in_progress, done, and blocked. Valid priorities are high, medium, and low.
 
 ## Plan Workflow
 
